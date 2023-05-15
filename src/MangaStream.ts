@@ -85,7 +85,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     /**
      * The language code which this source supports.
      */
-    abstract languageCode: string
+    language: string = '🇬🇧'
 
     // ----GENERAL SELECTORS----
 

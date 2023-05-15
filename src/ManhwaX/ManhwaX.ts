@@ -38,7 +38,6 @@ export const ManhwaXInfo: SourceInfo = {
 export class ManhwaX extends MangaStream {
 
     baseUrl: string = MANHWAX_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['popular_today']!.enabled = false

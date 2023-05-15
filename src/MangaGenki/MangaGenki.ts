@@ -38,7 +38,6 @@ export const MangaGenkiInfo: SourceInfo = {
 export class MangaGenki extends MangaStream {
 
     baseUrl: string = MANGAGENKI_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['new_titles']!.selectorFunc = ($: CheerioStatic) => $('li', $('h3:contains(New Titles)')?.parent()?.next())

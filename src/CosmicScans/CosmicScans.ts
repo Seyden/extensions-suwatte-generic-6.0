@@ -39,7 +39,6 @@ export const CosmicScansInfo: SourceInfo = {
 export class CosmicScans extends MangaStream {
 
     baseUrl: string = COSMICSCANS_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override interceptResponse(response: Response) {
         console.log(`Response Status ${response.status} with location ${response.headers.location}`)

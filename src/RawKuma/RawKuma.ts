@@ -38,6 +38,6 @@ export const RawKumaInfo: SourceInfo = {
 export class RawKuma extends MangaStream {
 
     baseUrl: string = RAWKUMA_DOMAIN
-    languageCode: string = '🇯🇵'
+    override language: string = '🇯🇵'
 
 }

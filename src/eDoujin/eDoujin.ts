@@ -34,7 +34,6 @@ export const eDoujinInfo: SourceInfo = {
 export class eDoujin extends MangaStream {
 
     baseUrl: string = EDOUJIN_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.utao', $('h2:contains(Latest Update)')?.parent()?.next())

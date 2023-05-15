@@ -43,7 +43,7 @@ export const SkyMangasInfo: SourceInfo = {
 export class SkyMangas extends MangaStream {
 
     baseUrl: string = SKYMANGAS_DOMAIN
-    languageCode: string = '🇪🇸'
+    override language: string = '🇪🇸'
 
     override parser = new SkyMangasParser()
 

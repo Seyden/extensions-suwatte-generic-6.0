@@ -37,7 +37,7 @@ export const SushiScanInfo: SourceInfo = {
 
 export class SushiScan extends MangaStream {
     baseUrl: string = SUSHI_SCAN_DOMAIN
-    languageCode: string = '🇫🇷'
+    override language: string = '🇫🇷'
 
     override manga_tag_selector_box = 'div.seriestugenre'
 

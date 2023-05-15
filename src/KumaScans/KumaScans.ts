@@ -34,7 +34,6 @@ export const KumaScansInfo: SourceInfo = {
 export class KumaScans extends MangaStream {
 
     baseUrl: string = KUMASCANS_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Latest Update)')?.parent()?.next())

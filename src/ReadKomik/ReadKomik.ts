@@ -34,7 +34,6 @@ export const ReadKomikInfo: SourceInfo = {
 export class ReadKomik extends MangaStream {
 
     baseUrl: string = READKOMIK_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['new_titles']!.enabled = false

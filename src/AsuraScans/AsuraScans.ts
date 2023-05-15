@@ -40,7 +40,6 @@ export const AsuraScansInfo: SourceInfo = {
 export class AsuraScans extends MangaStream {
 
     baseUrl: string = ASURASCANS_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override readonly parser: AsuraScansParser = new AsuraScansParser()
 

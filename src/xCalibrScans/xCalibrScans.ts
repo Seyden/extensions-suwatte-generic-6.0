@@ -34,7 +34,6 @@ export const xCalibrScansInfo: SourceInfo = {
 export class xCalibrScans extends MangaStream {
 
     baseUrl: string = XCALIBRSCANS_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['new_titles']!.enabled = false

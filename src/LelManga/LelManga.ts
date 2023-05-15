@@ -38,7 +38,7 @@ export const LelMangaInfo: SourceInfo = {
 export class LelManga extends MangaStream {
 
     baseUrl: string = LELMANGA_DOMAIN
-    languageCode: string = '🇫🇷'
+    override language: string = '🇫🇷'
 
     override manga_selector_author = 'Autheur'
     override manga_selector_artist = 'Artiste'

@@ -34,7 +34,6 @@ export const InfernalVoidScansInfo: SourceInfo = {
 export class InfernalVoidScans extends MangaStream {
 
     baseUrl: string = INFERNALVOIDSCANS_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.uta', $('h2:contains(Project Update)')?.parent()?.next())

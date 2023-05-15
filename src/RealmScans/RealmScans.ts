@@ -34,7 +34,6 @@ export const RealmScansInfo: SourceInfo = {
 export class RealmScans extends MangaStream {
 
     baseUrl: string = REALMSCANS_DOMAIN
-    languageCode: string = '🇬🇧'
 
     override sourceTraversalPathName = 'series'
 
