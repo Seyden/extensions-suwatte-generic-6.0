@@ -51,13 +51,13 @@ export class MangaStreamParser {
         let status
         switch (rawStatus.toLowerCase()) {
             case source.manga_StatusTypes.ONGOING.toLowerCase():
-                status = 'ONGOING'
+                status = 'Ongoing'
                 break
             case source.manga_StatusTypes.COMPLETED.toLowerCase():
-                status = 'COMPLETED'
+                status = 'Completed'
                 break
             default:
-                status = 'ONGOING'
+                status = 'Ongoing'
                 break
         }
 
@@ -90,9 +90,12 @@ export class MangaStreamParser {
     async parseChapterList($: CheerioSelector, mangaId: string, source: any): Promise<Chapter[]> {
         const chapters: Chapter[] = []
         let sortingIndex = 0
+        let langCode = source.language
 
-        // if (mangaId.toUpperCase().endsWith('-RAW') && source.languageCode == 'gb')
-        // langCode = LanguageCode.KOREAN
+        // Usually for Manhwa sites
+        if (mangaId.toUpperCase().endsWith('-RAW') && source.language == '🇬🇧') {
+            langCode = '🇰🇷'
+        }
 
         for (const chapter of $('li', 'div#chapterlist').toArray()) {
             const title = $('span.chapternum', chapter).text().trim()
@@ -114,7 +117,7 @@ export class MangaStreamParser {
 
             chapters.push({
                 id: chapterNumber.toString(),
-                langCode: source.language,
+                langCode: langCode,
                 chapNum: chapterNumber,
                 name: title,
                 time: date,
@@ -140,8 +143,8 @@ export class MangaStreamParser {
         // To avoid our regex capturing more scrips, we stop at the first match of ";", also known as the first ending the matching script.
         let obj: any = /ts_reader.run\((.[^;]+)\)/.exec(data)?.[1] ?? '' // Get the data else return null.
         if (obj == '') {
-            throw new Error(`Failed to find page details script for manga ${mangaId}`)
-        } // If null, throw error, else parse data to json.
+            throw new Error(`Failed to find page details script for manga ${mangaId}`) // If null, throw error, else parse data to json.
+        }
 
         obj = JSON.parse(obj)
 
@@ -179,7 +182,7 @@ export class MangaStreamParser {
         return true
     }
 
-    parseTags($: CheerioSelector, source: any): TagSection[] {
+    parseTags($: CheerioSelector): TagSection[] {
         const tagSections: any[] = [
             { id: '0', label: 'genres', tags: [] },
             { id: '1', label: 'status', tags: [] },
@@ -202,10 +205,7 @@ export class MangaStreamParser {
                     continue
                 }
 
-                tagSections[i].tags.push(App.createTag({
-                    id,
-                    label
-                }))
+                tagSections[i].tags.push(App.createTag({ id, label }))
             }
         }
 
@@ -223,7 +223,7 @@ export class MangaStreamParser {
             }
 
             const title: string = $('a', obj).attr('title') ?? ''
-            const image = this.getImageSrc($('img', obj))?.split('?resize')[0] ?? ''
+            const image = this.getImageSrc($('img', obj))
             const subtitle = $('div.epxs', obj).text().trim()
 
             results.push({
@@ -243,7 +243,7 @@ export class MangaStreamParser {
 
         for (const manga of $('div.bs', 'div.listupd').toArray()) {
             const title = $('a', manga).attr('title')
-            const image = this.getImageSrc($('img', manga))?.split('?resize')[0] ?? ''
+            const image = this.getImageSrc($('img', manga))
             const subtitle = $('div.epxs', manga).text().trim()
 
             const slug: string = this.idCleaner($('a', manga).attr('href') ?? '')
@@ -283,7 +283,7 @@ export class MangaStreamParser {
         for (const manga of mangas.toArray()) {
             const title = section.titleSelectorFunc($, manga)
 
-            const image = this.getImageSrc($('img', manga))?.split('?resize')[0] ?? ''
+            const image = this.getImageSrc($('img', manga))
             const subtitle = section.subtitleSelectorFunc($, manga) ?? ''
 
             const slug: string = this.idCleaner($('a', manga).attr('href') ?? '')
@@ -338,16 +338,18 @@ export class MangaStreamParser {
         const dataSRC = imageObj?.attr('data-src')
 
         if (typeof src != 'undefined' && !src?.startsWith('data')) {
-            image = imageObj?.attr('src')
+            image = src
         } else if (typeof dataLazy != 'undefined' && !dataLazy?.startsWith('data')) {
-            image = imageObj?.attr('data-lazy-src')
+            image = dataLazy
         } else if (typeof srcset != 'undefined' && !srcset?.startsWith('data')) {
-            image = imageObj?.attr('srcset')?.split(' ')[0] ?? ''
+            image = srcset?.split(' ')[0] ?? ''
         } else if (typeof dataSRC != 'undefined' && !dataSRC?.startsWith('data')) {
-            image = imageObj?.attr('data-src')
+            image = dataSRC
         } else {
             image = 'https://i.imgur.com/GYUxEX8.png'
         }
+
+        image = image?.split('?resize')[0] ?? ''
 
         return encodeURI(decodeURI(this.decodeHTMLEntity(image?.trim() ?? '')))
     }

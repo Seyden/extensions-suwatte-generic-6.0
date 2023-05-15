@@ -14,15 +14,15 @@ import {
 const KUMASCANS_DOMAIN = 'https://kumascans.com'
 
 export const KumaScansInfo: SourceInfo = {
-    version: getExportVersion('0.0.1'),
+    version: getExportVersion('0.0.0'),
     name: 'KumaScans',
     description: 'Extension that pulls manga from KumaScans',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
+    author: 'Seyden',
+    authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: KUMASCANS_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     sourceTags: [
         {
             text: 'Notifications',
@@ -34,7 +34,7 @@ export const KumaScansInfo: SourceInfo = {
 export class KumaScans extends MangaStream {
 
     baseUrl: string = KUMASCANS_DOMAIN
-    language: string = '🇬🇧'
+    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Latest Update)')?.parent()?.next())

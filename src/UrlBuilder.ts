@@ -17,7 +17,7 @@ export class URLBuilder {
             return this
         }
 
-        let array = (this.parameters[key] as any[])
+        const array = (this.parameters[key] as any[])
         if (array?.length) {
             array.push(value)
         } else {

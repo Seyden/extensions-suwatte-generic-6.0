@@ -10,7 +10,7 @@
     "test": "npx paperback test",
     "nodemon": "nodemon"
   },
-  "author": "Netsky",
+  "author": "Seyden",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.1",

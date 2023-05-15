@@ -18,8 +18,8 @@ export const CosmicScansInfo: SourceInfo = {
     version: getExportVersion('0.0.0'),
     name: 'CosmicScans',
     description: 'Extension that pulls manga from CosmicScans',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
+    author: 'Seyden',
+    authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: COSMICSCANS_DOMAIN,
@@ -28,6 +28,10 @@ export const CosmicScansInfo: SourceInfo = {
         {
             text: 'Notifications',
             type: BadgeColor.GREEN
+        },
+        {
+            text: 'FULL BUGGY AND WON\'T WORK!!',
+            type: BadgeColor.RED
         }
     ]
 }
@@ -35,7 +39,7 @@ export const CosmicScansInfo: SourceInfo = {
 export class CosmicScans extends MangaStream {
 
     baseUrl: string = COSMICSCANS_DOMAIN
-    language: string = '🇬🇧'
+    languageCode: string = '🇬🇧'
 
     override interceptResponse(response: Response) {
         console.log(`Response Status ${response.status} with location ${response.headers.location}`)

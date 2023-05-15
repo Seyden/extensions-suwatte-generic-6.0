@@ -16,15 +16,15 @@ import { AsuraScansParser } from './AsuraScansParser'
 const ASURASCANS_DOMAIN = 'https://www.asurascans.com'
 
 export const AsuraScansInfo: SourceInfo = {
-    version: getExportVersion('0.0.8'),
+    version: getExportVersion('0.0.0'),
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
+    author: 'Seyden',
+    authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: ASURASCANS_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     sourceTags: [
         {
             text: 'Notifications',
@@ -40,7 +40,7 @@ export const AsuraScansInfo: SourceInfo = {
 export class AsuraScans extends MangaStream {
 
     baseUrl: string = ASURASCANS_DOMAIN
-    language: string = '🇬🇧'
+    languageCode: string = '🇬🇧'
 
     override readonly parser: AsuraScansParser = new AsuraScansParser()
 

@@ -14,7 +14,7 @@ import {
 const INFERNALVOIDSCANS_DOMAIN = 'https://void-scans.com'
 
 export const InfernalVoidScansInfo: SourceInfo = {
-    version: getExportVersion('0.0.1'),
+    version: getExportVersion('0.0.0'),
     name: 'InfernalVoidScans',
     description: 'Extension that pulls manga from InfernalVoidScans',
     author: 'nicknitewolf',
@@ -34,7 +34,7 @@ export const InfernalVoidScansInfo: SourceInfo = {
 export class InfernalVoidScans extends MangaStream {
 
     baseUrl: string = INFERNALVOIDSCANS_DOMAIN
-    language: string = '🇬🇧'
+    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.uta', $('h2:contains(Project Update)')?.parent()?.next())

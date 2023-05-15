@@ -17,12 +17,12 @@ export const ManhwaXInfo: SourceInfo = {
     version: getExportVersion('0.0.0'),
     name: 'ManhwaX',
     description: 'Extension that pulls manga from ManhwaX',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
+    author: 'Seyden',
+    authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.ADULT,
     websiteBaseURL: MANHWAX_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     sourceTags: [
         {
             text: 'Notifications',
@@ -38,7 +38,7 @@ export const ManhwaXInfo: SourceInfo = {
 export class ManhwaX extends MangaStream {
 
     baseUrl: string = MANHWAX_DOMAIN
-    language: string = '🇬🇧'
+    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['popular_today']!.enabled = false

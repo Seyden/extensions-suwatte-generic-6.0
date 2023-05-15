@@ -17,12 +17,12 @@ export const eDoujinInfo: SourceInfo = {
     version: getExportVersion('0.0.0'),
     name: 'eDoujin',
     description: 'Extension that pulls manga from eDoujin',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
+    author: 'Seyden',
+    authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.ADULT,
     websiteBaseURL: EDOUJIN_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     sourceTags: [
         {
             text: '18+',
@@ -34,7 +34,7 @@ export const eDoujinInfo: SourceInfo = {
 export class eDoujin extends MangaStream {
 
     baseUrl: string = EDOUJIN_DOMAIN
-    language: string = '🇬🇧'
+    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.utao', $('h2:contains(Latest Update)')?.parent()?.next())

@@ -17,12 +17,12 @@ export const MangaGenkiInfo: SourceInfo = {
     version: getExportVersion('0.0.0'),
     name: 'MangaGenki',
     description: 'Extension that pulls manga from MangaGenki',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
+    author: 'Seyden',
+    authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.ADULT,
     websiteBaseURL: MANGAGENKI_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     sourceTags: [
         {
             text: 'Notifications',
@@ -38,7 +38,7 @@ export const MangaGenkiInfo: SourceInfo = {
 export class MangaGenki extends MangaStream {
 
     baseUrl: string = MANGAGENKI_DOMAIN
-    language: string = '🇬🇧'
+    languageCode: string = '🇬🇧'
 
     override configureSections() {
         this.sections['new_titles']!.selectorFunc = ($: CheerioStatic) => $('li', $('h3:contains(New Titles)')?.parent()?.next())

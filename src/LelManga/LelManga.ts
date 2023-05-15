@@ -17,12 +17,12 @@ export const LelMangaInfo: SourceInfo = {
     version: getExportVersion('0.0.0'),
     name: 'LelManga',
     description: 'Extension that pulls manga from LelManga',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
+    author: 'Seyden',
+    authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: LELMANGA_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     sourceTags: [
         {
             text: 'Notifications',
@@ -38,7 +38,7 @@ export const LelMangaInfo: SourceInfo = {
 export class LelManga extends MangaStream {
 
     baseUrl: string = LELMANGA_DOMAIN
-    language: string = '🇫🇷'
+    languageCode: string = '🇫🇷'
 
     override manga_selector_author = 'Autheur'
     override manga_selector_artist = 'Artiste'

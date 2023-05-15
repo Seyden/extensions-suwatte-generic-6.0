@@ -22,12 +22,12 @@ export const SkyMangasInfo: SourceInfo = {
     version: getExportVersion('0.0.0'),
     name: 'SkyMangas',
     description: 'Extension that pulls manga from SkyMangas',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
+    author: 'Seyden',
+    authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: SKYMANGAS_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     sourceTags: [
         {
             text: 'Notifications',
@@ -43,7 +43,7 @@ export const SkyMangasInfo: SourceInfo = {
 export class SkyMangas extends MangaStream {
 
     baseUrl: string = SKYMANGAS_DOMAIN
-    language: string = '🇪🇸'
+    languageCode: string = '🇪🇸'
 
     override parser = new SkyMangasParser()
 

@@ -17,12 +17,12 @@ export const RawKumaInfo: SourceInfo = {
     version: getExportVersion('0.0.0'),
     name: 'RawKuma',
     description: 'Extension that pulls manga from RawKuma',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
+    author: 'Seyden',
+    authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: RAWKUMA_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     sourceTags: [
         {
             text: 'Notifications',
@@ -38,6 +38,6 @@ export const RawKumaInfo: SourceInfo = {
 export class RawKuma extends MangaStream {
 
     baseUrl: string = RAWKUMA_DOMAIN
-    language: string = '🇯🇵'
+    languageCode: string = '🇯🇵'
 
 }

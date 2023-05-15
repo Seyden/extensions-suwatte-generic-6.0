@@ -5,6 +5,7 @@ import {
     ChapterProviding,
     HomePageSectionsProviding,
     HomeSection,
+    HomeSectionType,
     MangaProviding,
     PagedResults,
     PartialSourceManga,
@@ -26,40 +27,14 @@ import {
     HomeSectionData
 } from './MangaStreamHelper'
 
-interface TimeAgo {
-    now: string[]
-    yesterday: string[]
-    years: string[]
-    months: string[]
-    weeks: string[]
-    days: string[]
-    hours: string[]
-    minutes: string[]
-    seconds: string[]
-}
-
-interface dateMonths {
-    january: string
-    february: string
-    march: string
-    april: string
-    may: string
-    june: string
-    july: string
-    august: string
-    september: string
-    october: string
-    november: string
-    december: string
-}
-
-interface StatusTypes {
-    ONGOING: string
-    COMPLETED: string
-}
+import {
+    Months,
+    StatusTypes,
+    TimeAgo
+} from './MangaStreamInterfaces'
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '2.2.0'
+const BASE_VERSION = '3.0.0'
 export const getExportVersion = (EXTENSION_VERSION: string): string => {
     return BASE_VERSION.split('.')
                        .map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index]))
@@ -110,7 +85,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     /**
      * The language code which this source supports.
      */
-    abstract language: string
+    abstract languageCode: string
 
     // ----GENERAL SELECTORS----
 
@@ -160,6 +135,13 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
      */
     manga_selector_artist = 'Artist'
 
+    /**
+     * The selector for status.
+     * This can change depending on the language
+     * Leave default if not used!
+     * Default = "Status" (English)
+     * THESE ARE CASE SENSITIVE!
+     */
     manga_selector_status = 'Status'
 
     manga_tag_selector_box = 'span.mgen'
@@ -167,7 +149,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     /**
      * The selector for the manga status.
      * These can change depending on the language
-     * Default = "ONGOING: "ONGOING", COMPLETED: "COMPLETED"
+     * Default = ONGOING: "ONGOING", COMPLETED: "COMPLETED"
      */
     manga_StatusTypes: StatusTypes = {
         ONGOING: 'ONGOING',
@@ -179,7 +161,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
      * Enter the months for the website's language in correct order, case insensitive.
      * Default = English Translation
      */
-    dateMonths: dateMonths = {
+    dateMonths: Months = {
         january: 'January',
         february: 'February',
         march: 'March',
@@ -228,7 +210,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     sections: Record<string, HomeSectionData> = {
         'popular_today': {
             ...DefaultHomeSectionData,
-            section: createHomeSection('popular_today', 'Popular Today'),
+            section: createHomeSection('popular_today', 'Popular Today', true, HomeSectionType.singleRowLarge),
             selectorFunc: ($: CheerioStatic) => $('div.bsx', $('h2:contains(Popular Today)')?.parent()?.next()),
             titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('a', element).attr('title'),
             subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('div.epxs', element).text().trim(),
@@ -248,6 +230,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             ...DefaultHomeSectionData,
             section: createHomeSection('new_titles', 'New Titles'),
             selectorFunc: ($: CheerioStatic) => $('li', $('h3:contains(New Series)')?.parent()?.next()),
+            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span a', element).toArray().map(x => $(x).text().trim()).join(', '),
             getViewMoreItemsFunc: (page: string) => `${this.sourceTraversalPathName}/?page=${page}&order=latest`,
             sortIndex: 30
         },
@@ -255,18 +238,21 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             ...DefaultHomeSectionData,
             section: createHomeSection('top_alltime', 'Top All Time', false),
             selectorFunc: ($: CheerioStatic) => $('li', $('div.serieslist.pop.wpop.wpop-alltime')),
+            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span a', element).toArray().map(x => $(x).text().trim()).join(', '),
             sortIndex: 40
         },
         'top_monthly': {
             ...DefaultHomeSectionData,
             section: createHomeSection('top_monthly', 'Top Monthly', false),
             selectorFunc: ($: CheerioStatic) => $('li', $('div.serieslist.pop.wpop.wpop-monthly')),
+            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span a', element).toArray().map(x => $(x).text().trim()).join(', '),
             sortIndex: 50
         },
         'top_weekly': {
             ...DefaultHomeSectionData,
             section: createHomeSection('top_weekly', 'Top Weekly', false),
             selectorFunc: ($: CheerioStatic) => $('li', $('div.serieslist.pop.wpop.wpop-weekly')),
+            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span a', element).toArray().map(x => $(x).text().trim()).join(', '),
             sortIndex: 60
         }
     }
@@ -313,7 +299,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     async getSearchTags(): Promise<TagSection[]> {
         const $ = await this.loadRequestData(`${this.baseUrl}/${this.sourceTraversalPathName}`)
-        return this.parser.parseTags($, this)
+        return this.parser.parseTags($)
     }
 
     async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
@@ -340,7 +326,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             }))
         }
 
-        metadata = !this.parser.isLastPage($, 'search_request')
+        metadata = !this.parser.isLastPage($, query?.title ? 'search_request' : 'view_more')
                    ? { page: page + 1 }
                    : undefined
 
@@ -352,18 +338,18 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     async constructSearchRequest(page: number, query: SearchRequest): Promise<any> {
         let urlBuilder: URLBuilder = new URLBuilder(this.baseUrl)
-        .addPathComponent(this.sourceTraversalPathName)
-        .addQueryParameter('page', page.toString())
+            .addPathComponent(this.sourceTraversalPathName)
+            .addQueryParameter('page', page.toString())
 
         if (query?.title) {
             urlBuilder = urlBuilder.addQueryParameter('s', encodeURIComponent(query?.title.replace(/[’–][a-z]*/g, '') ?? ''))
         } else {
             urlBuilder = urlBuilder
-            .addQueryParameter('genre', getFilterTagsBySection('genres', query?.includedTags, true))
-            .addQueryParameter('genre', getFilterTagsBySection('genres', query?.excludedTags, false, await this.supportsTagExclusion()))
-            .addQueryParameter('status', getIncludedTagBySection('status', query?.includedTags))
-            .addQueryParameter('type', getIncludedTagBySection('type', query?.includedTags))
-            .addQueryParameter('order', getIncludedTagBySection('order', query?.includedTags))
+                .addQueryParameter('genre', getFilterTagsBySection('genres', query?.includedTags, true))
+                .addQueryParameter('genre', getFilterTagsBySection('genres', query?.excludedTags, false, await this.supportsTagExclusion()))
+                .addQueryParameter('status', getIncludedTagBySection('status', query?.includedTags))
+                .addQueryParameter('type', getIncludedTagBySection('type', query?.includedTags))
+                .addQueryParameter('order', getIncludedTagBySection('order', query?.includedTags))
         }
 
         return App.createRequest({
@@ -410,7 +396,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults> {
         const page: number = metadata?.page ?? 1
 
-        let param = this.sections[homepageSectionId]!.getViewMoreItemsFunc(page) ?? undefined
+        const param = this.sections[homepageSectionId]!.getViewMoreItemsFunc(page) ?? undefined
         if (!param) {
             throw new Error(`Invalid homeSectionId | ${homepageSectionId}`)
         }
@@ -421,6 +407,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         metadata = !this.parser.isLastPage($, 'view_more')
                    ? { page: page + 1 }
                    : undefined
+
         return App.createPagedResults({
             results: items,
             metadata
@@ -544,9 +531,9 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         })
     }
 
-    CloudFlareError(status: any): void {
-        if (status > 400) {
-            throw new Error('CLOUDFLARE BYPASS ERROR:\nPlease go to Settings > Sources > <The name of this source> and press Cloudflare Bypass')
+    CloudFlareError(status: number): void {
+        if (status == 503 || status == 403) {
+            throw new Error('CLOUDFLARE DETECTED:\nDo the Cloudflare bypass by clicking the cloud icon!')
         }
     }
 }

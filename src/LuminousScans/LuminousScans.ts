@@ -34,7 +34,7 @@ export const LuminousScansInfo: SourceInfo = {
 export class LuminousScans extends MangaStream {
 
     baseUrl: string = LUMINOUSSCANS_DOMAIN
-    language: string = '🇬🇧'
+    languageCode: string = '🇬🇧'
 
     override sourceTraversalPathName = 'series'
     override usePostIds = false

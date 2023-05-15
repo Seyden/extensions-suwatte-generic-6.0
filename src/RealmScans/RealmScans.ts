@@ -14,7 +14,7 @@ import {
 const REALMSCANS_DOMAIN = 'https://realmscans.com'
 
 export const RealmScansInfo: SourceInfo = {
-    version: getExportVersion('0.0.8'),
+    version: getExportVersion('0.0.0'),
     name: 'RealmScans',
     description: 'Extension that pulls manga from RealmScans',
     author: 'Seyden',
@@ -22,7 +22,7 @@ export const RealmScansInfo: SourceInfo = {
     icon: 'icon.webp',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: REALMSCANS_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
     sourceTags: [
         {
             text: 'Notifications',
@@ -34,7 +34,7 @@ export const RealmScansInfo: SourceInfo = {
 export class RealmScans extends MangaStream {
 
     baseUrl: string = REALMSCANS_DOMAIN
-    language: string = '🇬🇧'
+    languageCode: string = '🇬🇧'
 
     override sourceTraversalPathName = 'series'
 
