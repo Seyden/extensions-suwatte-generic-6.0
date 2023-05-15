@@ -1,2 +1,2 @@
 # MangaStream Extensions
-[Click me](https://thenetsky.github.io/extensions-mangastream/) to go to the index page!
+[Click me](https://seyden.github.io/extensions-generic-0.8/mangastream/) to go to the index page!
