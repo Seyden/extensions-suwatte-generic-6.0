@@ -28,10 +28,6 @@ export const CosmicScansInfo: SourceInfo = {
         {
             text: 'Notifications',
             type: BadgeColor.GREEN
-        },
-        {
-            text: 'FULL BUGGY AND WON\'T WORK!!',
-            type: BadgeColor.RED
         }
     ]
 }
@@ -40,17 +36,9 @@ export class CosmicScans extends MangaStream {
 
     baseUrl: string = COSMICSCANS_DOMAIN
 
-    override interceptResponse(response: Response) {
-        console.log(`Response Status ${response.status} with location ${response.headers.location}`)
-        if (response.status != 301) {
-            return
-        }
-
-        response.headers.location = response.headers.location.replace('http://', 'https://')
-    }
+    override usePostIds = false
 
     override configureSections() {
         this.sections['new_titles']!.enabled = false
     }
-
 }
