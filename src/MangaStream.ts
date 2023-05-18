@@ -272,7 +272,12 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     async getChapters(mangaId: string): Promise<Chapter[]> {
         const $ = await this.getMangaData(mangaId)
-        return await this.parser.parseChapterList($, mangaId, this)
+        const chapters = await this.parser.parseChapterList($, mangaId, this)
+        if (!Array.isArray(chapters) || chapters.length == 0) {
+            throw new Error(`Couldn't find any chapters for mangaId ${mangaId}, throwing an error to prevent loosing reading progress`)
+        }
+
+        return chapters
     }
 
     async getChapterSlug(mangaId: string, chapterId: string): Promise<string> {
