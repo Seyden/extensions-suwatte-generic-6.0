@@ -312,7 +312,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
         const request = await this.constructSearchRequest(page, query)
         const response = await this.requestManager.schedule(request, 1)
-        this.CloudFlareError(response.status)
+        this.CheckResponseErrors(response)
         const $ = this.cheerio.load(response.data as string)
         const results = await this.parser.parseSearchResults($, this)
 
@@ -474,7 +474,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             method: 'HEAD'
         })
         const headResponse = await this.requestManager.schedule(headRequest, 1)
-        this.CloudFlareError(headResponse.status)
+        this.CheckResponseErrors(headResponse)
 
         let postId: any
 
@@ -520,7 +520,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         })
 
         const response = await this.requestManager.schedule(request, 1)
-        this.CloudFlareError(response.status)
+        this.CheckResponseErrors(response)
         return this.cheerio.load(response.data as string)
     }
 
@@ -536,9 +536,14 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         })
     }
 
-    CloudFlareError(status: number): void {
-        if (status == 503 || status == 403) {
-            throw new Error('CLOUDFLARE DETECTED:\nDo the Cloudflare bypass by clicking the cloud icon!')
+    CheckResponseErrors(response: Response): void {
+        const status = response.status
+        switch (status) {
+            case 403:
+            case 503:
+                throw new Error('CLOUDFLARE DETECTED:\nDo the Cloudflare bypass by clicking the cloud icon!')
+            case 404:
+                throw new Error(`The requested page ${response.request.url} was not found!`)
         }
     }
 }
