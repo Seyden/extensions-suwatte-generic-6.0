@@ -29,8 +29,7 @@ import {
 
 import {
     Months,
-    StatusTypes,
-    TimeAgo
+    StatusTypes
 } from './MangaStreamInterfaces'
 
 // Set the version for the base, changing this version will change the versions of all sources
@@ -174,26 +173,6 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         october: 'October',
         november: 'November',
         december: 'December'
-    }
-
-    /**
-     * In this object, add the site's translations for the following time formats, case insensitive.
-     * If the site uses "12 hours ago" or "1 hour ago", only adding "hour" will be enough since "hours" includes "hour".
-     * Default =  English Translation
-     */
-    dateTimeAgo: TimeAgo = {
-        now: [
-            'less than an hour',
-            'just now'
-        ],
-        yesterday: ['yesterday'],
-        years: ['year'],
-        months: ['month'],
-        weeks: ['week'],
-        days: ['day'],
-        hours: ['hour'],
-        minutes: ['min'],
-        seconds: ['second']
     }
 
     // ----HOMESCREEN SELECTORS----
