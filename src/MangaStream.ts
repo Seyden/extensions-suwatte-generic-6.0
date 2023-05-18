@@ -32,6 +32,8 @@ import {
     StatusTypes
 } from './MangaStreamInterfaces'
 
+const simpleUrl = require('simple-url')
+
 // Set the version for the base, changing this version will change the versions of all sources
 const BASE_VERSION = '3.0.0'
 export const getExportVersion = (EXTENSION_VERSION: string): string => {
@@ -61,6 +63,12 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
                             Accept: 'image/avif,image/webp,*/*'
                         }) // Used for images hosted on Wordpress blogs
                     }
+                }
+
+                const path: any = simpleUrl.parse(request.url, true)
+                if (!path.protocol || path.protocol == 'http') {
+                    path.protocol = 'https'
+                    request.url = simpleUrl.create(path)
                 }
 
                 return request
