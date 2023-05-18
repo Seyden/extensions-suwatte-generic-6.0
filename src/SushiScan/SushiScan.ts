@@ -50,8 +50,6 @@ export class SushiScan extends MangaStream {
         COMPLETED: 'Terminé'
     }
 
-    override sourceTraversalPathName = 'manga'
-
     // ----DATE SELECTORS----
     /**
      * Enter the months for the website's language in correct order, case insensitive.
