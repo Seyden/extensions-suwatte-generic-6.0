@@ -39,6 +39,8 @@ export class SushiScan extends MangaStream {
     baseUrl: string = SUSHI_SCAN_DOMAIN
     override language: string = '🇫🇷'
 
+    override sourceTraversalPathName = 'catalogue'
+
     override manga_tag_selector_box = 'div.seriestugenre'
 
     override manga_selector_artist = 'Dessinateur'
