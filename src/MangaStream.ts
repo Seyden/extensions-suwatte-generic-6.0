@@ -81,7 +81,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
                                 id: 'domain_url',
                                 label: 'Domain',
                                 value: App.createDUIBinding({
-                                    get: async () => this.getBaseUrl(),
+                                    get: async () => await this.getBaseUrl(),
                                     set: async (newValue) => await stateManager.store('Domain', newValue)
                                 })
                             })
@@ -293,7 +293,9 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     }
 
     getMangaShareUrl(mangaId: string): string {
-        const url: string = await this.getBaseUrl()
+        let url: string = ''
+        this.getBaseUrl().then(baseUrl => url = baseUrl );
+
         return this.usePostIds
                ? `${url}/?p=${mangaId}/`
                : `${url}/${this.sourceTraversalPathName}/${mangaId}/`
@@ -530,7 +532,6 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             return postId?.toString()
         }
 
-        const url: string = await this.getBaseUrl()
         const $ = await this.loadRequestData(`${url}/${path}/${slug}/`)
 
         // Step 1: Try to get postId from shortlink
