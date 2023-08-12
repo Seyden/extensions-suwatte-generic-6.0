@@ -32,10 +32,16 @@ import {
     StatusTypes
 } from './MangaStreamInterfaces'
 
+import {
+    DUINavigationButton,
+    DUISection,
+    SourceStateManager
+} from '@paperback/types/lib'
+
 const simpleUrl = require('simple-url')
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '3.0.0'
+const BASE_VERSION = '3.0.1'
 export const getExportVersion = (EXTENSION_VERSION: string): string => {
     return BASE_VERSION.split('.')
                        .map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index]))
@@ -55,7 +61,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             header: 'Source Menu',
             isHidden: false,
             rows: async () => [
-                this.sourceSettings(stateManager)
+                this.sourceSettings(this.stateManager)
             ]
         })
     }
@@ -75,7 +81,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
                                 id: 'domain_url',
                                 label: 'Domain',
                                 value: App.createDUIBinding({
-                                    get: async () =>  getBaseUrl(),
+                                    get: async () => this.getBaseUrl(),
                                     set: async (newValue) => await stateManager.store('Domain', newValue)
                                 })
                             })
@@ -128,7 +134,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
      */
     abstract baseUrl: string
     async getBaseUrl(): Promise<string> {
-        return await stateManager.retrieve('Domain') ?? this.baseUrl
+        return await this.stateManager.retrieve('Domain') ?? this.baseUrl
     }
 
     /**
