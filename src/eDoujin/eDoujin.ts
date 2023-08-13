@@ -22,7 +22,7 @@ export const eDoujinInfo: SourceInfo = {
     icon: 'icon.png',
     contentRating: ContentRating.ADULT,
     websiteBaseURL: EDOUJIN_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED | SourceIntents.SETTINGS_UI,
     sourceTags: [
         {
             text: '18+',

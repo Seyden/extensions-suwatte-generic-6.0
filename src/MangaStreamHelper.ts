@@ -47,3 +47,7 @@ export function getFilterTagsBySection(section: string, tags: Tag[], included: b
         return id
     })
 }
+
+export function isImgLink(url: string) {
+    return(url.match(/^http[^\?]*.(jpg|jpeg|gif|png|tiff|bmp)(\?(.*))?$/gmi) != null);
+}

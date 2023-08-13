@@ -2,7 +2,6 @@
 import {
     BadgeColor,
     ContentRating,
-    Response,
     SourceInfo,
     SourceIntents
 } from '@paperback/types'
@@ -23,7 +22,7 @@ export const CosmicScansInfo: SourceInfo = {
     icon: 'icon.png',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: COSMICSCANS_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED | SourceIntents.SETTINGS_UI,
     sourceTags: [
         {
             text: 'Notifications',

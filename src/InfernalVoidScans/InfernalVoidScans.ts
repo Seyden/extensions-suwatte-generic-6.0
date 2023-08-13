@@ -22,7 +22,7 @@ export const InfernalVoidScansInfo: SourceInfo = {
     icon: 'icon.png',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: INFERNALVOIDSCANS_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED | SourceIntents.SETTINGS_UI,
     sourceTags: [
         {
             text: 'Notifications',

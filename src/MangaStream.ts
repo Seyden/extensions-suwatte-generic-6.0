@@ -24,7 +24,8 @@ import {
     DefaultHomeSectionData,
     getFilterTagsBySection,
     getIncludedTagBySection,
-    HomeSectionData
+    HomeSectionData,
+    isImgLink
 } from './MangaStreamHelper'
 
 import {
@@ -41,7 +42,7 @@ import {
 const simpleUrl = require('simple-url')
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '3.0.1'
+const BASE_VERSION = '3.0.3'
 export const getExportVersion = (EXTENSION_VERSION: string): string => {
     return BASE_VERSION.split('.')
                        .map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index]))
@@ -66,31 +67,29 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         })
     }
 
-    sourceSettings(stateManager: SourceStateManager): DUINavigationButton {
-        return App.createDUINavigationButton({
-            id: 'mangastream_settings',
-            label: 'Source Settings',
-            form: App.createDUIForm({
-                sections: async () => [
-                    App.createDUISection({
-                        id: 'domain',
-                        isHidden: false,
-                        footer: 'Override the domain url for the source.',
-                        rows: async () => [
-                            App.createDUIInputField({
-                                id: 'domain_url',
-                                label: 'Domain',
-                                value: App.createDUIBinding({
-                                    get: async () => await this.getBaseUrl(),
-                                    set: async (newValue) => await stateManager.store('Domain', newValue)
-                                })
+    sourceSettings = (stateManager: SourceStateManager): DUINavigationButton => App.createDUINavigationButton({
+        id: 'mangastream_settings',
+        label: 'Source Settings',
+        form: App.createDUIForm({
+            sections: async () => [
+                App.createDUISection({
+                    id: 'domain',
+                    isHidden: false,
+                    footer: 'Override the domain url for the source.',
+                    rows: async () => [
+                        App.createDUIInputField({
+                            id: 'domain_url',
+                            label: 'Domain',
+                            value: App.createDUIBinding({
+                                get: async () => await this.getAndSetBaseUrl(),
+                                set: async (newValue) => await stateManager.store('Domain', newValue)
                             })
-                        ]
-                    })
-                ]
-            })
+                        })
+                    ]
+                })
+            ]
         })
-    }
+    })
 
     parser = new MangaStreamParser()
 
@@ -100,10 +99,11 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         requestTimeout: 15000,
         interceptor: {
             interceptRequest: async (request: Request): Promise<Request> => {
-                const url: string = await this.getBaseUrl()
+
+                const url: string = await this.getAndSetBaseUrl()
                 request.headers = {
                     ...(request.headers ?? {}), ...{
-                        'user-agent': await this.requestManager.getDefaultUserAgent(),
+                        //'user-agent': await this.requestManager.getDefaultUserAgent(),
                         referer: `${url}/`, ...((request.url.includes('wordpress.com') || request.url.includes('wp.com')) && {
                             Accept: 'image/avif,image/webp,*/*'
                         }) // Used for images hosted on Wordpress blogs
@@ -114,6 +114,20 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
                 if (!path.protocol || path.protocol == 'http') {
                     path.protocol = 'https'
                     request.url = simpleUrl.create(path)
+                }
+
+                await this.interceptRequest(request)
+
+                if (isImgLink(request.url)) {
+                    let overrideUrl: string = await this.stateManager.retrieve('Domain')
+                    if (overrideUrl && overrideUrl != this.baseUrl) {
+                        const basePath: any = simpleUrl.parse(this.baseUrl, true)
+                        const overridePath: any = simpleUrl.parse(overrideUrl, true)
+                        if (path.host.includes(basePath.host) || path.host.includes(overridePath.host)) {
+                            path.host = overridePath.host
+                            request.url = simpleUrl.create(path)
+                        }
+                    }
                 }
 
                 return request
@@ -129,12 +143,18 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     interceptResponse(response: Response): void {
     }
 
+    async interceptRequest(request: Request): Promise<void> {
+    }
+
     /**
      * The URL of the website. Eg. https://mangadark.com without a trailing slash
      */
+    finalUrl: string = ''
     abstract baseUrl: string
-    async getBaseUrl(): Promise<string> {
-        return await this.stateManager.retrieve('Domain') ?? this.baseUrl
+    async getAndSetBaseUrl(): Promise<string> {
+        let url: string = await this.stateManager.retrieve('Domain') ?? this.baseUrl
+        this.finalUrl = url
+        return url
     }
 
     /**
@@ -293,17 +313,16 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     }
 
     getMangaShareUrl(mangaId: string): string {
-        let url: string = ''
-        this.getBaseUrl().then(baseUrl => url = baseUrl );
-
         return this.usePostIds
-               ? `${url}/?p=${mangaId}/`
-               : `${url}/${this.sourceTraversalPathName}/${mangaId}/`
+               ? `${this.finalUrl}/?p=${mangaId}/`
+               : `${this.finalUrl}/${this.sourceTraversalPathName}/${mangaId}/`
     }
 
     getMangaData = async (mangaId: string): Promise<CheerioStatic> => await this.loadRequestData(this.getMangaShareUrl(mangaId))
 
     async getMangaDetails(mangaId: string): Promise<SourceManga> {
+        console.log('getMangaDetails')
+        await this.getAndSetBaseUrl()
         const $ = await this.getMangaData(mangaId)
         return this.parser.parseMangaDetails($, mangaId, this)
     }
@@ -336,13 +355,13 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
         const chapterLink: string = await this.getChapterSlug(mangaId, chapterId)
-        const url: string = await this.getBaseUrl()
+        const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/${chapterLink}/`)
         return this.parser.parseChapterDetails($, mangaId, chapterId)
     }
 
     async getSearchTags(): Promise<TagSection[]> {
-        const url: string = await this.getBaseUrl()
+        const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/${this.sourceTraversalPathName}`)
         return this.parser.parseTags($)
     }
@@ -382,7 +401,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     }
 
     async constructSearchRequest(page: number, query: SearchRequest): Promise<any> {
-        const url: string = await this.getBaseUrl()
+        const url: string = await this.getAndSetBaseUrl()
         let urlBuilder: URLBuilder = new URLBuilder(url)
             .addPathComponent(this.sourceTraversalPathName)
             .addQueryParameter('page', page.toString())
@@ -412,7 +431,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     }
 
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
-        const url: string = await this.getBaseUrl()
+        const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/`)
 
         const promises: Promise<void>[] = []
@@ -448,7 +467,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             throw new Error(`Invalid homeSectionId | ${homepageSectionId}`)
         }
 
-        const url: string = await this.getBaseUrl()
+        const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/${param}`)
 
         const items: PartialSourceManga[] = await this.parser.parseViewMore($, this)
@@ -484,7 +503,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     }
 
     async convertPostIdToSlug(postId: number): Promise<any> {
-        const url: string = await this.getBaseUrl()
+        const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/?p=${postId}`)
 
         let parseSlug: any
@@ -513,7 +532,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     async convertSlugToPostId(slug: string, path: string): Promise<string> {
         // Credit to the MadaraDex team :-D
-        const url: string = await this.getBaseUrl()
+        const url: string = await this.getAndSetBaseUrl()
         const headRequest = App.createRequest({
             url: `${url}/${path}/${slug}/`,
             method: 'HEAD'
@@ -570,7 +589,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     }
 
     async getCloudflareBypassRequestAsync(): Promise<Request> {
-        const url: string = await this.getBaseUrl()
+        const url: string = await this.getAndSetBaseUrl()
         return App.createRequest({
             url: `${this.bypassPage || url}/`,
             method: 'GET',

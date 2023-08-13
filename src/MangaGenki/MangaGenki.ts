@@ -22,7 +22,7 @@ export const MangaGenkiInfo: SourceInfo = {
     icon: 'icon.png',
     contentRating: ContentRating.ADULT,
     websiteBaseURL: MANGAGENKI_DOMAIN,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED | SourceIntents.SETTINGS_UI,
     sourceTags: [
         {
             text: 'Notifications',
