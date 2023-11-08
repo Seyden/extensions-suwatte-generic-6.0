@@ -95,8 +95,8 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     // ----REQUEST MANAGER----
     requestManager = App.createRequestManager({
-        requestsPerSecond: 5,
-        requestTimeout: 15000,
+        requestsPerSecond: 15,
+        requestTimeout: 30000,
         interceptor: {
             interceptRequest: async (request: Request): Promise<Request> => {
 
