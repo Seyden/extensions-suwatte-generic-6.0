@@ -16,4 +16,5 @@ export interface Months {
 export interface StatusTypes {
     ONGOING: string;
     COMPLETED: string;
+    DROPPED: string;
 }

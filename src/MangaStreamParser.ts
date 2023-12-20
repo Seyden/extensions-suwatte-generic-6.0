@@ -48,6 +48,9 @@ export class MangaStreamParser {
         const rawStatus = $(`span:contains(${source.manga_selector_status}), .fmed b:contains(${source.manga_selector_status})+span, .imptdt:contains(${source.manga_selector_status}) i`).contents().remove().last().text().trim()
         let status
         switch (rawStatus.toLowerCase()) {
+            case source.manga_StatusTypes.DROPPED.toLowerCase():
+                status = 'Dropped'
+                break
             case source.manga_StatusTypes.ONGOING.toLowerCase():
                 status = 'Ongoing'
                 break
@@ -176,15 +179,30 @@ export class MangaStreamParser {
 
     parseTags($: CheerioSelector): TagSection[] {
         const tagSections: any[] = [
-            { id: '0', label: 'genres', tags: [] },
-            { id: '1', label: 'status', tags: [] },
-            { id: '2', label: 'type', tags: [] },
-            { id: '3', label: 'order', tags: [] }
+            { id: '0', label: 'chapters', tags: [
+                    App.createTag({ id: 'chapters:10', label: '+10' }),
+                    App.createTag({ id: 'chapters:20', label: '+20' }),
+                    App.createTag({ id: 'chapters:30', label: '+30' }),
+                    App.createTag({ id: 'chapters:40', label: '+40' }),
+                    App.createTag({ id: 'chapters:50', label: '+50' }),
+                    App.createTag({ id: 'chapters:60', label: '+60' }),
+                    App.createTag({ id: 'chapters:70', label: '+70' }),
+                    App.createTag({ id: 'chapters:80', label: '+80' }),
+                    App.createTag({ id: 'chapters:90', label: '+90' }),
+                    App.createTag({ id: 'chapters:100', label: '+100' }),
+                    App.createTag({ id: 'chapters:150', label: '+150' }),
+                    App.createTag({ id: 'chapters:200', label: '+200' }),
+                    App.createTag({ id: 'chapters:250', label: '+250' }),
+                ]},
+            { id: '1', label: 'genres', tags: [] },
+            { id: '2', label: 'status', tags: [] },
+            { id: '3', label: 'type', tags: [] },
+            { id: '4', label: 'order', tags: [] }
         ]
 
         const sectionDropDowns = $('ul.dropdown-menu.c4.genrez, ul.dropdown-menu.c1').toArray()
-        for (let i = 0; i < 4; ++i) {
-            const sectionDropdown = sectionDropDowns[i]
+        for (let i = 1; i < 5; ++i) {
+            const sectionDropdown = sectionDropDowns[i-1]
             if (!sectionDropdown) {
                 continue
             }

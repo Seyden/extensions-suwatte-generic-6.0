@@ -14,6 +14,7 @@ import {
     SearchRequest,
     SearchResultsProviding,
     SourceManga,
+    Tag,
     TagSection
 } from '@paperback/types'
 
@@ -228,7 +229,8 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
      */
     manga_StatusTypes: StatusTypes = {
         ONGOING: 'ONGOING',
-        COMPLETED: 'COMPLETED'
+        COMPLETED: 'COMPLETED',
+        DROPPED: 'DROPPED'
     }
 
     // ----DATE SELECTORS----
@@ -321,7 +323,6 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     getMangaData = async (mangaId: string): Promise<CheerioStatic> => await this.loadRequestData(this.getMangaShareUrl(mangaId))
 
     async getMangaDetails(mangaId: string): Promise<SourceManga> {
-        console.log('getMangaDetails')
         await this.getAndSetBaseUrl()
         const $ = await this.getMangaData(mangaId)
         return this.parser.parseMangaDetails($, mangaId, this)
@@ -367,6 +368,26 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     }
 
     async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
+        let result: {
+            metadata: any;
+            manga: PartialSourceManga[]
+        }
+        let manga: PartialSourceManga[] = []
+
+        while (manga.length == 0)
+        {
+            result = await this.search(metadata, query)
+            metadata = result.metadata
+            manga = result.manga
+        }
+
+        return App.createPagedResults({
+            results: manga,
+            metadata
+        })
+    }
+
+    private async search(metadata: any, query: SearchRequest) {
         const page: number = metadata?.page ?? 1
 
         const request = await this.constructSearchRequest(page, query)
@@ -375,8 +396,17 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         const $ = this.cheerio.load(response.data as string)
         const results = await this.parser.parseSearchResults($, this)
 
+        const chapterTag = query?.includedTags.find((x: Tag) => x.id.startsWith('chapters'))
+
         const manga: PartialSourceManga[] = []
         for (const result of results) {
+            if (chapterTag) {
+                const chapterCount = parseInt(chapterTag.id.replace(`chapters:`, ''))
+                const chapterCountRegex = result.subtitle?.match(/(\d+)/)
+                if (chapterCountRegex?.[1] && parseInt(chapterCountRegex[1]) < chapterCount)
+                    continue
+            }
+
             let mangaId: string = result.slug
             if (this.usePostIds) {
                 mangaId = await this.slugToPostId(result.slug, result.path)
@@ -393,11 +423,10 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         metadata = !this.parser.isLastPage($, query?.title ? 'search_request' : 'view_more')
                    ? { page: page + 1 }
                    : undefined
-
-        return App.createPagedResults({
-            results: manga,
-            metadata
-        })
+        return {
+            metadata,
+            manga
+        }
     }
 
     async constructSearchRequest(page: number, query: SearchRequest): Promise<any> {
