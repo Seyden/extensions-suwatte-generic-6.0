@@ -1,4 +1,3 @@
-/* eslint-disable linebreak-style */
 import {
     BadgeColor,
     ContentRating,
@@ -11,29 +10,29 @@ import {
     MangaStream
 } from '../MangaStream'
 
-const READKOMIK_DOMAIN = 'https://readkomik.com'
+const DOMAIN = 'https://hentai20.io'
 
-export const ReadKomikInfo: SourceInfo = {
+export const Hentai20Info: SourceInfo = {
     version: getExportVersion('0.0.0'),
-    name: 'ReadKomik',
-    description: 'Extension that pulls manga from ReadKomik',
-    author: 'Seyden',
-    authorWebsite: 'https://github.com/Seyden',
+    name: 'Hentai20',
+    description: `Extension that pulls manga from ${DOMAIN}`,
+    author: 'Netsky',
+    authorWebsite: 'http://github.com/TheNetsky',
     icon: 'icon.png',
-    contentRating: ContentRating.MATURE,
-    websiteBaseURL: READKOMIK_DOMAIN,
+    contentRating: ContentRating.ADULT,
+    websiteBaseURL: DOMAIN,
     intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED | SourceIntents.SETTINGS_UI,
     sourceTags: [
         {
-            text: 'Notifications',
-            type: BadgeColor.GREEN
+            text: '18+',
+            type: BadgeColor.YELLOW
         }
     ]
 }
 
-export class ReadKomik extends MangaStream {
+export class Hentai20 extends MangaStream {
 
-    baseUrl: string = READKOMIK_DOMAIN
+    baseUrl: string = DOMAIN
 
     override configureSections() {
         this.sections['new_titles'].enabled = false

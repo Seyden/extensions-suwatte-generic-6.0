@@ -104,7 +104,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
                 const url: string = await this.getAndSetBaseUrl()
                 request.headers = {
                     ...(request.headers ?? {}), ...{
-                        //'user-agent': await this.requestManager.getDefaultUserAgent(),
+                        'user-agent': await this.requestManager.getDefaultUserAgent(),
                         referer: `${url}/`, ...((request.url.includes('wordpress.com') || request.url.includes('wp.com')) && {
                             Accept: 'image/avif,image/webp,*/*'
                         }) // Used for images hosted on Wordpress blogs
@@ -136,6 +136,9 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
             interceptResponse: async (response: Response): Promise<Response> => {
                 this.interceptResponse(response)
+                if (response.headers.location) {
+                    response.headers.location = response.headers.location.replace(/^http:/, 'https:')
+                }
                 return response
             }
         }
@@ -264,7 +267,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     configureSections(): void {
     }
 
-    sections: Record<string, HomeSectionData> = {
+    sections: Record<'popular_today' | 'latest_update' | 'new_titles' | 'top_alltime' | 'top_monthly' | 'top_weekly', HomeSectionData> = {
         'popular_today': {
             ...DefaultHomeSectionData,
             section: createHomeSection('popular_today', 'Popular Today', true, HomeSectionType.singleRowLarge),
@@ -316,7 +319,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     getMangaShareUrl(mangaId: string): string {
         return this.usePostIds
-               ? `${this.finalUrl}/?p=${mangaId}/`
+               ? `${this.finalUrl}/${this.sourceTraversalPathName}/?p=${mangaId}/`
                : `${this.finalUrl}/${this.sourceTraversalPathName}/${mangaId}/`
     }
 
@@ -392,7 +395,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
         const request = await this.constructSearchRequest(page, query)
         const response = await this.requestManager.schedule(request, 1)
-        this.CheckResponseErrors(response)
+        this.checkResponseErrors(response)
         const $ = this.cheerio.load(response.data as string)
         const results = await this.parser.parseSearchResults($, this)
 
@@ -491,7 +494,8 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults> {
         const page: number = metadata?.page ?? 1
 
-        const param = this.sections[homepageSectionId]!.getViewMoreItemsFunc(page) ?? undefined
+        // @ts-ignore
+        const param = this.sections[homepageSectionId].getViewMoreItemsFunc(page) ?? undefined
         if (!param) {
             throw new Error(`Invalid homeSectionId | ${homepageSectionId}`)
         }
@@ -560,18 +564,18 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     }
 
     async convertSlugToPostId(slug: string, path: string): Promise<string> {
-        // Credit to the MadaraDex team :-D
         const url: string = await this.getAndSetBaseUrl()
-        const headRequest = App.createRequest({
+        const request = App.createRequest({
             url: `${url}/${path}/${slug}/`,
-            method: 'HEAD'
+            method: 'GET',
         })
-        const headResponse = await this.requestManager.schedule(headRequest, 1)
-        this.CheckResponseErrors(headResponse)
+
+        const response = await this.requestManager.schedule(request, 1)
+        this.checkResponseErrors(response)
 
         let postId: any
 
-        const postIdRegex = headResponse?.headers.Link?.match(/\?p=(\d+)/)
+        const postIdRegex = response?.headers.Link?.match(/\?p=(\d+)/)
         if (postIdRegex?.[1]) {
             postId = postIdRegex[1]
         }
@@ -580,7 +584,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             return postId?.toString()
         }
 
-        const $ = await this.loadRequestData(`${url}/${path}/${slug}/`)
+        const $ = this.cheerio.load(response.data as string)
 
         // Step 1: Try to get postId from shortlink
         postId = Number($('link[rel="shortlink"]')?.attr('href')?.split('/?p=')[1])
@@ -613,7 +617,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         })
 
         const response = await this.requestManager.schedule(request, 1)
-        this.CheckResponseErrors(response)
+        this.checkResponseErrors(response)
         return this.cheerio.load(response.data as string)
     }
 
@@ -630,12 +634,12 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         })
     }
 
-    CheckResponseErrors(response: Response): void {
+    checkResponseErrors(response: Response): void {
         const status = response.status
         switch (status) {
             case 403:
             case 503:
-                throw new Error('CLOUDFLARE DETECTED:\nDo the Cloudflare bypass by clicking the cloud icon!')
+                throw new Error(`CLOUDFLARE BYPASS ERROR:\\nPlease go to the homepage of <${this.baseUrl}> and press the cloud icon.`)
             case 404:
                 throw new Error(`The requested page ${response.request.url} was not found!`)
         }

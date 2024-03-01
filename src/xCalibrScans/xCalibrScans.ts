@@ -36,7 +36,7 @@ export class xCalibrScans extends MangaStream {
     baseUrl: string = XCALIBRSCANS_DOMAIN
 
     override configureSections() {
-        this.sections['new_titles']!.enabled = false
+        this.sections['new_titles'].enabled = false
     }
 
 }

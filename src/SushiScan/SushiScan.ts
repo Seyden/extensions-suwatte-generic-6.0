@@ -49,7 +49,8 @@ export class SushiScan extends MangaStream {
 
     override manga_StatusTypes = {
         ONGOING: 'En Cours',
-        COMPLETED: 'Terminé'
+        COMPLETED: 'Terminé',
+        DROPPED: 'Abandonné'
     }
 
     // ----DATE SELECTORS----
@@ -73,8 +74,8 @@ export class SushiScan extends MangaStream {
     }
 
     override configureSections() {
-        this.sections['popular_today']!.selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Populaire Aujourd\'hui)')?.parent()?.next())
-        this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.utao', $('h2:contains(Dernières Sorties)')?.parent()?.next())
-        this.sections['new_titles']!.enabled = false
+        this.sections['popular_today'].selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Populaire Aujourd\'hui)')?.parent()?.next())
+        this.sections['latest_update'].selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Dernières Sorties)')?.parent()?.next())
+        this.sections['new_titles'].enabled = false
     }
 }

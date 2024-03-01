@@ -11,10 +11,10 @@ import {
     MangaStream
 } from '../MangaStream'
 
-const LUMINOUSSCANS_DOMAIN = 'https://luminousscans.com'
+const LUMINOUSSCANS_DOMAIN = 'https://lumitoon.com'
 
 export const LuminousScansInfo: SourceInfo = {
-    version: getExportVersion('0.0.0'),
+    version: getExportVersion('0.0.1'),
     name: 'LuminousScans',
     description: 'Extension that pulls manga from LuminousScans',
     author: 'yehru',
@@ -39,6 +39,6 @@ export class LuminousScans extends MangaStream {
     override usePostIds = false
 
     override configureSections() {
-        this.sections['new_titles']!.enabled = false
+        this.sections['new_titles'].enabled = false
     }
 }

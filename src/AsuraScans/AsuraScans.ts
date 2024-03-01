@@ -37,7 +37,7 @@ export class AsuraScans extends MangaStream {
     override readonly parser: AsuraScansParser = new AsuraScansParser()
 
     override configureSections(): void {
-        this.sections['new_titles']!.enabled = false
+        this.sections['new_titles'].enabled = false
     }
 
     override async interceptRequest(request: Request): Promise<void> {

@@ -10,10 +10,6 @@ import {
     getExportVersion,
     MangaStream
 } from '../MangaStream'
-import {
-    createHomeSection,
-    DefaultHomeSectionData
-} from '../MangaStreamHelper'
 import { SkyMangasParser } from './SkyMangasParser'
 
 const SKYMANGAS_DOMAIN = 'https://skymangas.com'
@@ -47,43 +43,12 @@ export class SkyMangas extends MangaStream {
 
     override parser = new SkyMangasParser()
 
-    //----DATE SETTINGS
-    override dateMonths = {
-        january: 'enero',
-        february: 'febrero',
-        march: 'marzo',
-        april: 'abril',
-        may: 'mayo',
-        june: 'junio',
-        july: 'julio',
-        august: 'agosto',
-        september: 'septiembre',
-        october: 'octubre',
-        november: 'noviembre',
-        december: 'diciembre'
-    }
-
-    //----MANGA DETAILS SELECTORS
-    override manga_selector_author = 'Autor'
-    override manga_selector_artist = 'Artista'
-    override manga_selector_status = 'Estado'
-
     override configureSections() {
-        this.sections['popular_today']!.selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Popular Today)')?.parent()?.next())
-        this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Latest Update)')?.parent()?.next())
-        this.sections['new_titles']!.enabled = false
-        this.sections['top_alltime']!.enabled = false
-        this.sections['top_monthly']!.enabled = false
-        this.sections['top_weekly']!.enabled = false
-
-        this.sections['project_updates'] = {
-            ...DefaultHomeSectionData,
-            section: createHomeSection('project_updates', 'Project Updates', true),
-            selectorFunc: ($: CheerioStatic) => $('div.bsx', $('h2:contains(Project Update)')?.parent()?.next()),
-            titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('a', element).attr('title'),
-            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('div.epxs', element).text().trim(),
-            getViewMoreItemsFunc: (page: string) => `project/page/${page}`,
-            sortIndex: 11,
-        }
+        this.sections['popular_today'].selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Popular Today)')?.parent()?.next())
+        this.sections['latest_update'].selectorFunc = ($: CheerioStatic) => $('div.uta', $('h2:contains(Latest Update)')?.parent()?.next())
+        this.sections['new_titles'].enabled = false
+        this.sections['top_alltime'].enabled = false
+        this.sections['top_monthly'].enabled = false
+        this.sections['top_weekly'].enabled = false
     }
 }

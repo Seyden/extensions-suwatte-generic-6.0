@@ -1,4 +1,3 @@
-/* eslint-disable linebreak-style */
 import { MangaStreamParser } from '../MangaStreamParser'
 import { ChapterDetails } from '@paperback/types'
 
@@ -16,7 +15,7 @@ export class SkyMangasParser extends MangaStreamParser {
 
             const encodedContent: string = Buffer.from(scriptContent.replace('data:text/javascript;base64,', ''), 'base64').toString()
             // To avoid our regex capturing more scrips, we stop at the first match of ";", also known as the first ending the matching script
-            let scriptObj = /ts_reader.run\((.[^;]+)\)/.exec(encodedContent)?.[1] ?? '' // Get the data else return null.
+            const scriptObj = /ts_reader.run\((.[^;]+)\)/.exec(encodedContent)?.[1] ?? '' // Get the data else return null.
             if (!scriptObj) {
                 continue
             }

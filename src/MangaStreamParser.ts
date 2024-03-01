@@ -1,4 +1,3 @@
-/* eslint-disable linebreak-style */
 import {
     Chapter,
     ChapterDetails,
@@ -16,7 +15,7 @@ import entities = require('entities')
 
 export class MangaStreamParser {
     parseMangaDetails($: CheerioStatic, mangaId: string, source: any): SourceManga {
-        const titles = []
+        const titles: string[] = []
         titles.push(this.decodeHTMLEntity($('h1.entry-title').text().trim()))
 
         const altTitles = $(`span:contains(${source.manga_selector_AlternativeTitles}), b:contains(${source.manga_selector_AlternativeTitles})+span, .imptdt:contains(${source.manga_selector_AlternativeTitles}) i, h1.entry-title+span`).contents().remove().last().text().split(',') //Language dependant
@@ -30,7 +29,7 @@ export class MangaStreamParser {
         const author = $(`span:contains(${source.manga_selector_author}), .fmed b:contains(${source.manga_selector_author})+span, .imptdt:contains(${source.manga_selector_author}) i`).contents().remove().last().text().trim() //Language dependant
         const artist = $(`span:contains(${source.manga_selector_artist}), .fmed b:contains(${source.manga_selector_artist})+span, .imptdt:contains(${source.manga_selector_artist}) i`).contents().remove().last().text().trim() //Language dependant
         const image = this.getImageSrc($('img', 'div[itemprop="image"]'))
-        const description = this.decodeHTMLEntity($('div[itemprop="description"]').text().trim())
+        const description = this.decodeHTMLEntity($('div[itemprop="description"] p').text().trim())
 
         const arrayTags: Tag[] = []
         for (const tag of $('a', source.manga_tag_selector_box).toArray()) {
@@ -76,12 +75,8 @@ export class MangaStreamParser {
                 titles,
                 image: image || source.fallbackImage,
                 status,
-                author: author == ''
-                        ? 'Unknown'
-                        : author,
-                artist: artist == ''
-                        ? 'Unknown'
-                        : artist,
+                author: author == '' ? 'Unknown' : author,
+                artist: artist == '' ? 'Unknown' : artist,
                 tags: tagSections,
                 desc: description
             })
@@ -130,7 +125,6 @@ export class MangaStreamParser {
         }
 
         return chapters.map((chapter) => {
-            // @ts-ignore
             chapter.sortingIndex += chapters.length
             return App.createChapter(chapter)
         })
@@ -292,6 +286,12 @@ export class MangaStreamParser {
 
         for (const manga of mangas.toArray()) {
             const title = section.titleSelectorFunc($, manga)
+            if (!title) {
+                console.log(`Failed to parse homepage sections for ${source.baseUrl} title (${title})`)
+                continue
+            }
+
+
 
             const image = this.getImageSrc($('img', manga))
             const subtitle = section.subtitleSelectorFunc($, manga) ?? ''
@@ -305,10 +305,12 @@ export class MangaStreamParser {
                                        : postId)
                                     : slug
 
-            if (!mangaId || !title) {
+            if (!mangaId) {
                 console.log(`Failed to parse homepage sections for ${source.baseUrl} title (${title}) mangaId (${mangaId})`)
                 continue
             }
+
+            console.log(`Parsing ${title} in section ${section.section.title}`)
 
             items.push(App.createPartialSourceManga({
                 mangaId,
@@ -341,7 +343,7 @@ export class MangaStreamParser {
     }
 
     protected getImageSrc(imageObj: Cheerio | undefined): string {
-        let image: any
+        let image: string | undefined
         const src = imageObj?.attr('src')
         const dataLazy = imageObj?.attr('data-lazy-src')
         const srcset = imageObj?.attr('srcset')

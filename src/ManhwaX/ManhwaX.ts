@@ -11,7 +11,7 @@ import {
     MangaStream
 } from '../MangaStream'
 
-const MANHWAX_DOMAIN = 'https://manhwax.com'
+const MANHWAX_DOMAIN = 'https://manhwax.org'
 
 export const ManhwaXInfo: SourceInfo = {
     version: getExportVersion('0.0.0'),
@@ -40,8 +40,9 @@ export class ManhwaX extends MangaStream {
     baseUrl: string = MANHWAX_DOMAIN
 
     override configureSections() {
-        this.sections['popular_today']!.enabled = false
-        this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Latest Update)')?.parent()?.next())
-        this.sections['new_titles']!.enabled = false
+        this.sections['popular_today'].enabled = false
+        this.sections['latest_update'].selectorFunc = ($: CheerioStatic) => $('div.bsx', $('h2:contains(Latest Update)')?.parent()?.next())
+        this.sections['latest_update'].subtitleSelectorFunc = ($: CheerioStatic, element: CheerioElement) => $('div.epxs', element).text().trim()
+        this.sections['new_titles'].enabled = false
     }
 }

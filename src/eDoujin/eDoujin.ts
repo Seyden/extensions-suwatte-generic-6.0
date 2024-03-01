@@ -36,11 +36,7 @@ export class eDoujin extends MangaStream {
     baseUrl: string = EDOUJIN_DOMAIN
 
     override configureSections() {
-        this.sections['latest_update']!.selectorFunc = ($: CheerioStatic) => $('div.utao', $('h2:contains(Latest Update)')?.parent()?.next())
-        this.sections['new_titles']!.enabled = false
-        this.sections['top_alltime']!.enabled = false
-        this.sections['top_monthly']!.enabled = false
-        this.sections['top_weekly']!.enabled = false
+        this.sections['latest_update'].enabled = false
+        this.sections['new_titles'].enabled = false
     }
-
 }
