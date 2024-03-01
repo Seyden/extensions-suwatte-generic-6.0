@@ -1,22 +1,22 @@
 import {
     Chapter,
-    ChapterDetails,
-    Tag,
-    TagSection,
-    SourceManga,
-    PartialSourceManga
-} from '@paperback/types'
-
-import entities = require('entities')
+    ChapterData,
+    Content,
+    Highlight,
+    Property,
+    PublicationStatus,
+    Tag
+} from '@suwatte/daisuke'
 
 import {
-    extractVariableValues,
-    decryptData
+    decryptData,
+    extractVariableValues
 } from './MadaraDecrypter'
-
+import { ChapterPage } from '@suwatte/daisuke/dist/types/content/ChapterData'
+import entities = require('entities')
 
 export class Parser {
-    async parseMangaDetails($: CheerioStatic, mangaId: string, source: any): Promise<SourceManga> {
+    async parseMangaDetails($: CheerioStatic, mangaId: string, source: any): Promise<Content> {
         const title: string = this.decodeHTMLEntity($('div.post-title h1, div#manga-title h1').children().remove().end().text().trim())
         const author: string = this.decodeHTMLEntity($('div.author-content').first().text().replace('\\n', '').trim()).replace('Updating', '')
         const artist: string = this.decodeHTMLEntity($('div.artist-content').first().text().replace('\\n', '').trim()).replace('Updating', '')
@@ -25,13 +25,13 @@ export class Parser {
         const image: string = encodeURI(await this.getImageSrc($('div.summary_image img').first(), source))
         const parsedStatus: string = $('div.summary-content', $('div.post-content_item').last()).text().trim()
 
-        let status: string
+        let status: PublicationStatus
         switch (parsedStatus.toUpperCase()) {
             case 'COMPLETED':
-                status = 'Completed'
+                status = PublicationStatus.COMPLETED
                 break
             default:
-                status = 'Ongoing'
+                status = PublicationStatus.ONGOING
                 break
         }
 
@@ -40,23 +40,38 @@ export class Parser {
             const label = $(obj).text()
             const id = $(obj).attr('href')?.split('/')[4] ?? label
 
-            if (!label || !id) continue
-            genres.push(App.createTag({ label: label, id: id }))
-        }
-        const tagSections: TagSection[] = [App.createTagSection({ id: '0', label: 'genres', tags: genres })]
+            if (!label || !id)
+                continue
 
-        return App.createSourceManga({
-            id: mangaId,
-            mangaInfo: App.createMangaInfo({
-                titles: [title],
-                image: image,
-                author: author,
-                artist: artist,
-                tags: tagSections,
-                desc: description,
-                status: status
-            })
-        })
+            genres.push({ title: label, id: id })
+        }
+
+        const properties: Property[] = [
+            {
+                id: "genres",
+                title: "Genres",
+                tags: genres
+            },
+            {
+                id: "creators",
+                title: "Credits",
+                tags: [
+                    { title: author, id: `author-${author}`, noninteractive: true },
+                    { title: artist, id: `artist-${artist}`, noninteractive: true },
+                ],
+            },
+        ]
+
+        const chapters = this.parseChapterList($, mangaId, source)
+
+        return {
+            title,
+            status,
+            properties,
+            summary: description,
+            cover: image,
+            ...(chapters.length > 0 && { chapters })
+        }
     }
 
 
@@ -93,14 +108,13 @@ export class Parser {
             }
 
             chapters.push({
-                id: id,
-                langCode: source.language,
-                chapNum: chapNum,
-                name: chapName ? this.decodeHTMLEntity(chapName) : '',
-                time: mangaTime,
-                sortingIndex,
-                volume: 0,
-                group: ''
+                chapterId: id,
+                language: source.language,
+                number: chapNum,
+                title: chapName ? this.decodeHTMLEntity(chapName) : '',
+                date: mangaTime,
+                index: sortingIndex,
+                volume: 0
             })
             sortingIndex--
         }
@@ -110,30 +124,28 @@ export class Parser {
         }
 
         return chapters.map(chapter => {
-            chapter.sortingIndex += chapters.length
-            return App.createChapter(chapter)
+            chapter.index += chapters.length
+            return chapter
         })
     }
 
-    async parseChapterDetails($: CheerioSelector, mangaId: string, chapterId: string, selector: string, source: any): Promise<ChapterDetails> {
-        const pages: string[] = []
+    async parseChapterDetails($: CheerioSelector, mangaId: string, chapterId: string, selector: string, source: any): Promise<ChapterData> {
+        const pages: ChapterPage[] = []
 
         for (const obj of $(selector).get()) {
             const page = await this.getImageSrc($(obj), source)
             if (!page) {
                 throw new Error(`Could not parse page for postId:${mangaId} chapterId:${chapterId}`)
             }
-            pages.push(encodeURI(page))
+            pages.push({ url: encodeURI(page) })
         }
 
-        return App.createChapterDetails({
-            id: chapterId,
-            mangaId: mangaId,
+        return {
             pages: pages
-        })
+        }
     }
 
-    async parseProtectedChapterDetails($: CheerioSelector, mangaId: string, chapterId: string, selector: string, source: any): Promise<ChapterDetails> {
+    async parseProtectedChapterDetails($: CheerioSelector, mangaId: string, chapterId: string, selector: string, source: any): Promise<ChapterData> {
         if (!$(selector).length) {
             return this.parseChapterDetails($, mangaId, chapterId, selector, source)
         }
@@ -144,35 +156,33 @@ export class Parser {
         }
 
         const chapterList = decryptData(<string>variables['chapter_data'], <string>variables['wpmangaprotectornonce'])
-        const pages: string[] = []
+        const pages: ChapterPage[] = []
 
         chapterList.forEach((page: string) => {
-            pages.push(encodeURI(page))
+            pages.push({ url: encodeURI(page) })
         })
 
-        return App.createChapterDetails({
-            id: chapterId,
-            mangaId: mangaId,
+        return {
             pages: pages
-        })
+        }
     }
 
-    parseTags($: CheerioSelector, advancedSearch: boolean): TagSection[] {
+    parseTags($: CheerioSelector, advancedSearch: boolean): Tag[] {
         const genres: Tag[] = []
         if (advancedSearch) {
             for (const obj of $('.checkbox-group div label').toArray()) {
                 const label = $(obj).text().trim()
                 const id = $(obj).attr('for') ?? label
-                genres.push(App.createTag({ label: label, id: id }))
+                genres.push({ title: label, id: id })
             }
         } else {
             for (const obj of $('.menu-item-object-wp-manga-genre a', $('.second-menu')).toArray()) {
                 const label = $(obj).text().trim()
                 const id = $(obj).attr('href')?.split('/')[4] ?? label
-                genres.push(App.createTag({ label: label, id: id }))
+                genres.push({ title: label, id: id })
             }
         }
-        return [App.createTagSection({ id: '0', label: 'genres', tags: genres })]
+        return genres
     }
 
     async parseSearchResults($: CheerioSelector, source: any): Promise<any[]> {
@@ -201,8 +211,8 @@ export class Parser {
         return results
     }
 
-    async parseHomeSection($: CheerioStatic, source: any): Promise<PartialSourceManga[]> {
-        const items: PartialSourceManga[] = []
+    async parseHomeSection($: CheerioStatic, source: any): Promise<Highlight[]> {
+        const items: Highlight[] = []
 
         for (const obj of $('div.page-item-detail').toArray()) {
             const image = encodeURI(await this.getImageSrc($('img', obj), source) ?? '')
@@ -217,12 +227,12 @@ export class Parser {
                 continue
             }
 
-            items.push(App.createPartialSourceManga({
-                mangaId: String(source.usePostIds ? postId : slug),
-                image: image,
+            items.push({
+                id: String(source.usePostIds ? postId : slug),
+                cover: image,
                 title: this.decodeHTMLEntity(title),
                 subtitle: this.decodeHTMLEntity(subtitle)
-            }))
+            })
         }
         return items
     }
@@ -252,14 +262,12 @@ export class Parser {
             image = ''
         }
 
-        if (source?.stateManager) {
-            const HQthumb = await source.stateManager.retrieve('HQthumb') ?? false
-            if (HQthumb) {
-                image = image?.replace('-110x150', '')
-                    .replace('-175x238', '')
-                    .replace('-193x278', '')
-                    .replace('-350x476', '')
-            }
+        const HQthumb = await ObjectStore.boolean('HQthumb') ?? true
+        if (HQthumb) {
+            image = image?.replace('-110x150', '')
+                .replace('-175x238', '')
+                .replace('-193x278', '')
+                .replace('-350x476', '')
         }
 
         if (image?.startsWith('/')) {

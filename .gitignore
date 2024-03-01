@@ -1,4 +1,7 @@
 #compiled files and the monstor that node usually is
+### Suwatte ###
+stt/
+
 node_modules
 dist
 bundles
