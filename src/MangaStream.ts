@@ -470,7 +470,7 @@ export abstract class MangaStream implements ContentSource, PageLinkResolver, Im
 
             urlBuilder = urlBuilder
                 .addQueryParameter('genre', !this.supportsTagExclusion ? query.filters?.genres : undefined)
-                .addQueryParameter('genre', getFilterTagsBySection(excludedGenres?.idincluded, true, this.supportsTagExclusion))
+                .addQueryParameter('genre', getFilterTagsBySection(excludedGenres?.included, true, this.supportsTagExclusion))
                 .addQueryParameter('genre', getFilterTagsBySection(excludedGenres?.excluded, false, this.supportsTagExclusion))
                 .addQueryParameter('status', getSelectValue(query?.filters?.status))
                 .addQueryParameter('type', getSelectValue(query?.filters?.type))
