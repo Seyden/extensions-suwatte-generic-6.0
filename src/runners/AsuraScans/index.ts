@@ -14,7 +14,7 @@ const simpleUrl = require('simple-url')
 
 import { AsuraScansParser } from './AsuraScansParser'
 
-const ASURASCANS_DOMAIN = 'https://asura.gg'
+const ASURASCANS_DOMAIN = 'https://asuratoon.com'
 
 export class Target extends MangaStream {
 
