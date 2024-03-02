@@ -1026,7 +1026,7 @@ const daisuke_1 = require("@suwatte/daisuke");
 const MangaStream_1 = require("../../MangaStream");
 const simpleUrl = require('simple-url');
 const AsuraScansParser_1 = require("./AsuraScansParser");
-const ASURASCANS_DOMAIN = 'https://asura.gg';
+const ASURASCANS_DOMAIN = 'https://asuratoon.com';
 class Target extends MangaStream_1.MangaStream {
     constructor() {
         super(...arguments);
