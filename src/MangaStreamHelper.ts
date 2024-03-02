@@ -1,15 +1,15 @@
 import {
-    HomeSection,
-    HomeSectionType,
+    PageSection,
+    SectionStyle,
     Tag
-} from '@paperback/types'
+} from '@suwatte/daisuke'
 
 export interface HomeSectionData {
     selectorFunc: Function
     titleSelectorFunc: Function
     subtitleSelectorFunc: Function
     getViewMoreItemsFunc: Function
-    section: HomeSection
+    section: PageSection
     enabled: boolean
     sortIndex: number
 }
@@ -21,26 +21,30 @@ export const DefaultHomeSectionData = {
     enabled: true
 }
 
-export function createHomeSection(id: string, title: string, containsMoreItems: boolean = true, type: string = HomeSectionType.singleRowNormal): HomeSection {
-    return App.createHomeSection({
+export function createHomeSection(id: string, title: string, containsMoreItems: boolean = true, style: SectionStyle = SectionStyle.DEFAULT): PageSection {
+    return {
         id,
         title,
-        type,
-        containsMoreItems
-    })
+        style,
+        viewMoreLink: containsMoreItems ? { request: { page: 1, listId: id, configID: id } } : undefined,
+    }
+}
+
+export function getSelectValue(filterValue: string | undefined): any {
+    return filterValue?.replace(' ', '+')
 }
 
 export function getIncludedTagBySection(section: string, tags: Tag[]): any {
     return (tags?.find((x: Tag) => x.id.startsWith(`${section}:`))?.id.replace(`${section}:`, '') ?? '').replace(' ', '+')
 }
 
-export function getFilterTagsBySection(section: string, tags: Tag[], included: boolean, supportsExclusion: boolean = false): string[] {
+export function getFilterTagsBySection(tags: string[], included: boolean, supportsExclusion: boolean = false): string[] {
     if (!included && !supportsExclusion) {
         return []
     }
 
-    return tags?.filter((x: Tag) => x.id.startsWith(`${section}:`)).map((x: Tag) => {
-        let id: string = x.id.replace(`${section}:`, '')
+    return tags?.map((x: string) => {
+        let id: string = x
         if (!included) {
             id = encodeURI(`-${id}`)
         }

@@ -1,3 +1,5 @@
+import { ExcludableMultiSelectProp } from '@suwatte/daisuke'
+
 export interface Months {
     january: string;
     february: string;
@@ -18,3 +20,12 @@ export interface StatusTypes {
     COMPLETED: string;
     DROPPED: string;
 }
+
+export type FilterProps = {
+    status?: string; // select
+    type?: string; // select
+    order?: string; // select
+    chapters?: string; // select
+
+    genres?: string[] | ExcludableMultiSelectProp;
+};

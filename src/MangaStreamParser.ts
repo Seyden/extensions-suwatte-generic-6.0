@@ -1,20 +1,22 @@
-import {
-    Chapter,
-    ChapterDetails,
-    PartialSourceManga,
-    SourceManga,
-    Tag,
-    TagSection
-} from '@paperback/types'
-
 import { convertDate } from './LanguageUtils'
 
 import { HomeSectionData } from './MangaStreamHelper'
 
 import entities = require('entities')
+import {
+    Chapter,
+    ChapterData,
+    ChapterPage,
+    Content,
+    FilterType,
+    Highlight,
+    Property,
+    PublicationStatus,
+    Tag
+} from '@suwatte/daisuke'
 
 export class MangaStreamParser {
-    parseMangaDetails($: CheerioStatic, mangaId: string, source: any): SourceManga {
+    async parseMangaDetails($: CheerioStatic, mangaId: string, source: any): Promise<Content> {
         const titles: string[] = []
         titles.push(this.decodeHTMLEntity($('h1.entry-title').text().trim()))
 
@@ -33,54 +35,69 @@ export class MangaStreamParser {
 
         const arrayTags: Tag[] = []
         for (const tag of $('a', source.manga_tag_selector_box).toArray()) {
-            const label = $(tag).text().trim()
+            const title = $(tag).text().trim()
             const id = encodeURI($(tag).attr('href')?.replace(`${source.baseUrl}/${source.manga_tag_TraversalPathName}/`, '').replace(/\//g, '') ?? '')
-            if (!id || !label) {
+            if (!id || !title) {
                 continue
             }
             arrayTags.push({
                 id,
-                label
+                title
             })
         }
 
         const rawStatus = $(`span:contains(${source.manga_selector_status}), .fmed b:contains(${source.manga_selector_status})+span, .imptdt:contains(${source.manga_selector_status}) i`).contents().remove().last().text().trim()
-        let status
+        let status: PublicationStatus
         switch (rawStatus.toLowerCase()) {
             case source.manga_StatusTypes.DROPPED.toLowerCase():
-                status = 'Dropped'
+                status = PublicationStatus.CANCELLED
                 break
             case source.manga_StatusTypes.ONGOING.toLowerCase():
-                status = 'Ongoing'
+                status = PublicationStatus.ONGOING
                 break
             case source.manga_StatusTypes.COMPLETED.toLowerCase():
-                status = 'Completed'
+                status = PublicationStatus.COMPLETED
                 break
             default:
-                status = 'Ongoing'
+                status = PublicationStatus.ONGOING
                 break
         }
 
-        const tagSections: TagSection[] = [
-            App.createTagSection({
-                id: '0',
-                label: 'genres',
-                tags: arrayTags.map((x) => App.createTag(x))
-            })
+        const properties: Property[] = [
+            {
+                id: "genres",
+                title: "Genres",
+                tags: arrayTags
+            },
+            ... author != '' || artist != '' ? [{
+                id: "creators",
+                title: "Credits",
+                tags: [
+                    ... author != '' ? [{
+                        title: author,
+                        id: `author-${author}`,
+                        noninteractive: true
+                    }] : [],
+                    ... artist != '' ? [{
+                        title: artist,
+                        id: `artist-${artist}`,
+                        noninteractive: true
+                    }] : [],
+                ],
+            }] : []
         ]
 
-        return App.createSourceManga({
-            id: mangaId,
-            mangaInfo: App.createMangaInfo({
-                titles,
-                image: image || source.fallbackImage,
-                status,
-                author: author == '' ? 'Unknown' : author,
-                artist: artist == '' ? 'Unknown' : artist,
-                tags: tagSections,
-                desc: description
-            })
-        })
+        const chapters = await this.parseChapterList($, mangaId, source)
+
+        return {
+            title: titles[0]!,
+            additionalTitles: titles,
+            status,
+            properties,
+            summary: description,
+            cover: image || source.fallbackImage,
+            ...(chapters.length > 0 && { chapters })
+        }
     }
 
     async parseChapterList($: CheerioSelector, mangaId: string, source: any): Promise<Chapter[]> {
@@ -109,31 +126,29 @@ export class MangaStreamParser {
                 throw new Error(`Could not parse out ID when getting chapters for postId:${mangaId}`)
             }
 
-            await source.stateManager.store(`${mangaId}:${id}`, link)
-
             chapters.push({
-                id: chapterNumber.toString(),
-                langCode: langCode,
-                chapNum: chapterNumber,
-                name: title,
-                time: date,
-                sortingIndex,
+                chapterId: chapterNumber.toString(),
+                language: langCode,
+                number: chapterNumber,
+                title,
+                date,
+                index: sortingIndex,
                 volume: 0,
-                group: ''
+                webUrl: link
             })
             sortingIndex--
         }
 
         return chapters.map((chapter) => {
-            chapter.sortingIndex += chapters.length
-            return App.createChapter(chapter)
+            chapter.index += chapters.length
+            return chapter
         })
     }
 
-    parseChapterDetails($: CheerioStatic, mangaId: string, chapterId: string): ChapterDetails {
+    parseChapterDetails($: CheerioStatic, mangaId: string, chapterId: string): ChapterData {
         const data = $.html()
 
-        const pages: string[] = []
+        const pages: ChapterPage[] = []
 
         // To avoid our regex capturing more scrips, we stop at the first match of ";", also known as the first ending the matching script.
         let obj: any = /ts_reader.run\((.[^;]+)\)/.exec(data)?.[1] ?? '' // Get the data else return null.
@@ -155,43 +170,41 @@ export class MangaStreamParser {
 
             index.images.map((p: string) => {
                 if (this.renderChapterImage(p)) {
-                    pages.push(encodeURI(p))
+                    pages.push({ url: encodeURI(p) })
                 }
             })
         }
 
-        return App.createChapterDetails({
-            id: chapterId,
-            mangaId,
+        return {
             pages
-        })
+        }
     }
 
     renderChapterImage(path: string): boolean {
         return true
     }
 
-    parseTags($: CheerioSelector): TagSection[] {
-        const tagSections: any[] = [
-            { id: '0', label: 'chapters', tags: [
-                    App.createTag({ id: 'chapters:10', label: '+10' }),
-                    App.createTag({ id: 'chapters:20', label: '+20' }),
-                    App.createTag({ id: 'chapters:30', label: '+30' }),
-                    App.createTag({ id: 'chapters:40', label: '+40' }),
-                    App.createTag({ id: 'chapters:50', label: '+50' }),
-                    App.createTag({ id: 'chapters:60', label: '+60' }),
-                    App.createTag({ id: 'chapters:70', label: '+70' }),
-                    App.createTag({ id: 'chapters:80', label: '+80' }),
-                    App.createTag({ id: 'chapters:90', label: '+90' }),
-                    App.createTag({ id: 'chapters:100', label: '+100' }),
-                    App.createTag({ id: 'chapters:150', label: '+150' }),
-                    App.createTag({ id: 'chapters:200', label: '+200' }),
-                    App.createTag({ id: 'chapters:250', label: '+250' }),
+    parseTags($: CheerioSelector, supportsTagExclusion: boolean) {
+        const tagSections = [
+            { id: 'chapters', title: 'Chapters', type: FilterType.SELECT, tags: [
+                    { id: '10', title: '+10' },
+                    { id: '20', title: '+20' },
+                    { id: '30', title: '+30' },
+                    { id: '40', title: '+40' },
+                    { id: '50', title: '+50' },
+                    { id: '60', title: '+60' },
+                    { id: '70', title: '+70' },
+                    { id: '80', title: '+80' },
+                    { id: '90', title: '+90' },
+                    { id: '100', title: '+100' },
+                    { id: '150', title: '+150' },
+                    { id: '200', title: '+200' },
+                    { id: '250', title: '+250' },
                 ]},
-            { id: '1', label: 'genres', tags: [] },
-            { id: '2', label: 'status', tags: [] },
-            { id: '3', label: 'type', tags: [] },
-            { id: '4', label: 'order', tags: [] }
+            { id: 'genres', title: 'Genres', type: supportsTagExclusion ? FilterType.EXCLUDABLE_MULTISELECT : FilterType.MULTISELECT, tags: [] },
+            { id: 'status', title: 'Status', type: FilterType.SELECT, tags: [] },
+            { id: 'type', title: 'Type', type: FilterType.SELECT, tags: [] },
+            { id: 'order', title: 'Order', type: FilterType.SELECT, tags: [] }
         ]
 
         const sectionDropDowns = $('ul.dropdown-menu.c4.genrez, ul.dropdown-menu.c1').toArray()
@@ -202,18 +215,18 @@ export class MangaStreamParser {
             }
 
             for (const tag of $('li', sectionDropdown).toArray()) {
-                const label = $('label', tag).text().trim()
-                const id = `${tagSections[i].label}:${$('input', tag).attr('value')}`
+                const title = $('label', tag).text().trim()
+                const id = `${$('input', tag).attr('value')}`
 
-                if (!id || !label) {
+                if (!id || !title) {
                     continue
                 }
 
-                tagSections[i].tags.push(App.createTag({ id, label }))
+                tagSections[i]!.tags.push({ id, title })
             }
         }
 
-        return tagSections.map((x) => App.createTagSection(x))
+        return tagSections
     }
 
     async parseSearchResults($: CheerioSelector, source: any): Promise<any[]> {
@@ -242,8 +255,8 @@ export class MangaStreamParser {
         return results
     }
 
-    async parseViewMore($: CheerioStatic, source: any): Promise<PartialSourceManga[]> {
-        const items: PartialSourceManga[] = []
+    async parseViewMore($: CheerioStatic, source: any): Promise<Highlight[]> {
+        const items: Highlight[] = []
 
         for (const manga of $('div.bs', 'div.listupd').toArray()) {
             const title = $('a', manga).attr('title')
@@ -264,19 +277,19 @@ export class MangaStreamParser {
                 continue
             }
 
-            items.push(App.createPartialSourceManga({
-                mangaId,
-                image: image || source.fallbackImage,
+            items.push({
+                id: mangaId,
+                cover: image || source.fallbackImage,
                 title: this.decodeHTMLEntity(title),
                 subtitle: this.decodeHTMLEntity(subtitle)
-            }))
+            })
         }
 
         return items
     }
 
-    async parseHomeSection($: CheerioStatic, section: HomeSectionData, source: any): Promise<PartialSourceManga[]> {
-        const items: PartialSourceManga[] = []
+    async parseHomeSection($: CheerioStatic, section: HomeSectionData, source: any): Promise<Highlight[]> {
+        const items: Highlight[] = []
 
         const mangas = section.selectorFunc($)
         if (!mangas.length) {
@@ -290,8 +303,6 @@ export class MangaStreamParser {
                 console.log(`Failed to parse homepage sections for ${source.baseUrl} title (${title})`)
                 continue
             }
-
-
 
             const image = this.getImageSrc($('img', manga))
             const subtitle = section.subtitleSelectorFunc($, manga) ?? ''
@@ -310,14 +321,14 @@ export class MangaStreamParser {
                 continue
             }
 
-            console.log(`Parsing ${title} in section ${section.section.title}`)
+            //console.log(`Parsing ${title} in section ${section.section.title}`)
 
-            items.push(App.createPartialSourceManga({
-                mangaId,
-                image: image || source.fallbackImage,
+            items.push({
+                id: mangaId,
+                cover: image || source.fallbackImage,
                 title: this.decodeHTMLEntity(title),
                 subtitle: this.decodeHTMLEntity(subtitle)
-            }))
+            })
         }
 
         return items

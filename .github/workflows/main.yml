@@ -9,36 +9,27 @@ jobs:
     name: Bundle and Publish Sources
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [14.x] 
-
     steps:
       - name: Checkout Branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2.1.2
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-      
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
+
       - name: Extract branch name
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
         id: extract_branch
 
-      - name: Checkout existing bundles
-        uses: actions/checkout@v2
-        continue-on-error: true
-        with:
-          ref: gh-pages
-          path: bundles
-
       - run: npm install
-      - run: npm run bundle -- --folder=${{ steps.extract_branch.outputs.branch }}
+      - run: npm run build -- --folder ${{ steps.extract_branch.outputs.branch }}
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.0
         with:
           branch: gh-pages
-          folder: bundles
+          folder: ${{ steps.extract_branch.outputs.branch }}
+          target-folder: ${{ steps.extract_branch.outputs.branch }}

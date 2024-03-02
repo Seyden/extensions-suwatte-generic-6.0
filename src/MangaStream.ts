@@ -1,22 +1,28 @@
 /* eslint-disable linebreak-style */
 import {
     Chapter,
-    ChapterDetails,
-    ChapterProviding,
-    HomePageSectionsProviding,
-    HomeSection,
-    HomeSectionType,
-    MangaProviding,
-    PagedResults,
-    PartialSourceManga,
-    Request,
-    Response,
-    SearchRequest,
-    SearchResultsProviding,
-    SourceManga,
-    Tag,
-    TagSection
-} from '@paperback/types'
+    ChapterData,
+    Content,
+    ContentSource,
+    DirectoryConfig,
+    DirectoryFilter,
+    DirectoryRequest,
+    ExcludableMultiSelectProp,
+    Form,
+    Highlight,
+    ImageRequestHandler,
+    NetworkClientBuilder,
+    NetworkRequest,
+    NetworkResponse,
+    PagedResult,
+    PageLink,
+    PageLinkResolver,
+    PageSection,
+    Property,
+    ResolvedPageSection,
+    RunnerInfo,
+    SectionStyle,
+} from '@suwatte/daisuke'
 
 import { MangaStreamParser } from './MangaStreamParser'
 import { URLBuilder } from './UrlBuilder'
@@ -24,130 +30,110 @@ import {
     createHomeSection,
     DefaultHomeSectionData,
     getFilterTagsBySection,
-    getIncludedTagBySection,
+    getSelectValue,
     HomeSectionData,
-    isImgLink
 } from './MangaStreamHelper'
 
 import {
+    FilterProps,
     Months,
     StatusTypes
 } from './MangaStreamInterfaces'
 
-import {
-    DUINavigationButton,
-    DUISection,
-    SourceStateManager
-} from '@paperback/types/lib'
+import { load } from 'cheerio'
+import { UITextField } from '@suwatte/daisuke/dist/types/UI/UIElementBuilders'
 
 const simpleUrl = require('simple-url')
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '3.0.3'
-export const getExportVersion = (EXTENSION_VERSION: string): string => {
-    return BASE_VERSION.split('.')
+const BASE_VERSION = 1.0
+export const getExportVersion = (EXTENSION_VERSION: string): number => {
+    return Number(BASE_VERSION.toString().split('.')
                        .map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index]))
-                       .join('.')
+                       .join('.'))
 }
 
-export abstract class MangaStream implements ChapterProviding, HomePageSectionsProviding, MangaProviding, SearchResultsProviding {
-    constructor(public cheerio: CheerioAPI) {
+export abstract class MangaStream implements ContentSource, PageLinkResolver, ImageRequestHandler {
+    constructor() {
         this.configureSections()
     }
 
-    stateManager = App.createSourceStateManager()
+    abstract info: RunnerInfo
 
-    async getSourceMenu(): Promise<DUISection> {
-        return App.createDUISection({
-            id: 'sourceMenu',
-            header: 'Source Menu',
-            isHidden: false,
-            rows: async () => [
-                this.sourceSettings(this.stateManager)
-            ]
-        })
-    }
-
-    sourceSettings = (stateManager: SourceStateManager): DUINavigationButton => App.createDUINavigationButton({
-        id: 'mangastream_settings',
-        label: 'Source Settings',
-        form: App.createDUIForm({
-            sections: async () => [
-                App.createDUISection({
-                    id: 'domain',
-                    isHidden: false,
+    async getPreferenceMenu(): Promise<Form> {
+        return {
+            sections: [
+                {
                     footer: 'Override the domain url for the source.',
-                    rows: async () => [
-                        App.createDUIInputField({
-                            id: 'domain_url',
-                            label: 'Domain',
-                            value: App.createDUIBinding({
-                                get: async () => await this.getAndSetBaseUrl(),
-                                set: async (newValue) => await stateManager.store('Domain', newValue)
-                            })
+                    children: [
+                        UITextField({
+                            id: 'domain',
+                            title: 'Domain',
+                            value: await this.getAndSetBaseUrl(),
+                            async didChange(value) {
+                                return ObjectStore.set('Domain', value)
+                            }
                         })
                     ]
-                })
+                }
             ]
-        })
-    })
+        }
+    }
 
     parser = new MangaStreamParser()
 
     // ----REQUEST MANAGER----
-    requestManager = App.createRequestManager({
-        requestsPerSecond: 15,
-        requestTimeout: 30000,
-        interceptor: {
-            interceptRequest: async (request: Request): Promise<Request> => {
 
-                const url: string = await this.getAndSetBaseUrl()
-                request.headers = {
-                    ...(request.headers ?? {}), ...{
-                        'user-agent': await this.requestManager.getDefaultUserAgent(),
-                        referer: `${url}/`, ...((request.url.includes('wordpress.com') || request.url.includes('wp.com')) && {
-                            Accept: 'image/avif,image/webp,*/*'
-                        }) // Used for images hosted on Wordpress blogs
-                    }
+    client: NetworkClient = new NetworkClientBuilder()
+        .setRateLimit(15, 1)
+        .setTimeout(30000)
+        .addRequestInterceptor(async (request) => {
+            const url: string = await this.getAndSetBaseUrl()
+            request.headers = {
+                ...(request.headers ?? {}),
+                ...{
+                    referer: `${url}/`,
+                    ...((request.url.includes('wordpress.com') || request.url.includes('wp.com')) && {
+                        Accept: 'image/avif,image/webp,*/*'
+                    }) // Used for images hosted on Wordpress blogs
                 }
-
-                const path: any = simpleUrl.parse(request.url, true)
-                if (!path.protocol || path.protocol == 'http') {
-                    path.protocol = 'https'
-                    request.url = simpleUrl.create(path)
-                }
-
-                await this.interceptRequest(request)
-
-                if (isImgLink(request.url)) {
-                    let overrideUrl: string = await this.stateManager.retrieve('Domain')
-                    if (overrideUrl && overrideUrl != this.baseUrl) {
-                        const basePath: any = simpleUrl.parse(this.baseUrl, true)
-                        const overridePath: any = simpleUrl.parse(overrideUrl, true)
-                        if (path.host.includes(basePath.host) || path.host.includes(overridePath.host)) {
-                            path.host = overridePath.host
-                            request.url = simpleUrl.create(path)
-                        }
-                    }
-                }
-
-                return request
-            },
-
-            interceptResponse: async (response: Response): Promise<Response> => {
-                this.interceptResponse(response)
-                if (response.headers.location) {
-                    response.headers.location = response.headers.location.replace(/^http:/, 'https:')
-                }
-                return response
             }
-        }
-    })
 
-    interceptResponse(response: Response): void {
+            const path: any = simpleUrl.parse(request.url, true)
+            if (!path.protocol || path.protocol == 'http') {
+                path.protocol = 'https'
+                request.url = simpleUrl.create(path)
+            }
+
+            await this.interceptRequest(request)
+
+            /*if (isImgLink(request.url)) {
+                let overrideUrl: string = await ObjectStore.string('Domain')
+                if (overrideUrl && overrideUrl != this.baseUrl) {
+                    const basePath: any = simpleUrl.parse(this.baseUrl, true)
+                    const overridePath: any = simpleUrl.parse(overrideUrl, true)
+                    if (path.host.includes(basePath.host) || path.host.includes(overridePath.host)) {
+                        path.host = overridePath.host
+                        request.url = simpleUrl.create(path)
+                    }
+                }
+            }*/
+
+            return request
+        })
+        .addResponseInterceptor(async (response) => {
+            await this.interceptResponse(response)
+            if (response.headers.location) {
+                response.headers.location = response.headers.location.replace(/^http:/, 'https:')
+            }
+            return response
+        })
+        .build()
+
+    async interceptResponse(response: NetworkResponse): Promise<void> {
     }
 
-    async interceptRequest(request: Request): Promise<void> {
+    async interceptRequest(request: NetworkRequest): Promise<void> {
     }
 
     /**
@@ -156,7 +142,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     finalUrl: string = ''
     abstract baseUrl: string
     async getAndSetBaseUrl(): Promise<string> {
-        let url: string = await this.stateManager.retrieve('Domain') ?? this.baseUrl
+        let url: string = await ObjectStore.string('Domain') ?? this.baseUrl
         this.finalUrl = url
         return url
     }
@@ -190,6 +176,11 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
      * If it's not possible to use postIds for certain reasons, you can disable this here.
      */
     usePostIds = true
+
+    /**
+     * If the source supports tag exclusion
+     */
+    supportsTagExclusion = false
 
     // ----MANGA DETAILS SELECTORS----
     /**
@@ -270,7 +261,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     sections: Record<'popular_today' | 'latest_update' | 'new_titles' | 'top_alltime' | 'top_monthly' | 'top_weekly', HomeSectionData> = {
         'popular_today': {
             ...DefaultHomeSectionData,
-            section: createHomeSection('popular_today', 'Popular Today', true, HomeSectionType.singleRowLarge),
+            section: createHomeSection('popular_today', 'Popular Today', true, SectionStyle.GALLERY),
             selectorFunc: ($: CheerioStatic) => $('div.bsx', $('h2:contains(Popular Today)')?.parent()?.next()),
             titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('a', element).attr('title'),
             subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('div.epxs', element).text().trim(),
@@ -325,10 +316,10 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     getMangaData = async (mangaId: string): Promise<CheerioStatic> => await this.loadRequestData(this.getMangaShareUrl(mangaId))
 
-    async getMangaDetails(mangaId: string): Promise<SourceManga> {
+    async getContent(mangaId: string): Promise<Content> {
         await this.getAndSetBaseUrl()
         const $ = await this.getMangaData(mangaId)
-        return this.parser.parseMangaDetails($, mangaId, this)
+        return await this.parser.parseMangaDetails($, mangaId, this)
     }
 
     async getChapters(mangaId: string): Promise<Chapter[]> {
@@ -343,13 +334,13 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     async getChapterSlug(mangaId: string, chapterId: string): Promise<string> {
         const chapterKey = `${mangaId}:${chapterId}`
-        let existingMappedChapterLink = await this.stateManager.retrieve(chapterKey)
+        let existingMappedChapterLink = await ObjectStore.string(chapterKey)
         // If the Chapter List wasn't retrieved since the app was opened, retrieve it first and initialize it for all chapters
         if (existingMappedChapterLink == null) {
             await this.getChapters(mangaId)
         }
 
-        existingMappedChapterLink = await this.stateManager.retrieve(chapterKey)
+        existingMappedChapterLink = await ObjectStore.string(chapterKey)
         if (existingMappedChapterLink == null) {
             throw new Error(`Could not parse out Chapter Link when getting chapter details for postId: ${mangaId} chapterId: ${chapterId}`)
         }
@@ -357,54 +348,91 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
         return existingMappedChapterLink
     }
 
-    async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
+    async getChapterData(mangaId: string, chapterId: string): Promise<ChapterData> {
         const chapterLink: string = await this.getChapterSlug(mangaId, chapterId)
         const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/${chapterLink}/`)
         return this.parser.parseChapterDetails($, mangaId, chapterId)
     }
 
-    async getSearchTags(): Promise<TagSection[]> {
+    async getFilters(): Promise<DirectoryFilter[]> {
         const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/${this.sourceTraversalPathName}`)
-        return this.parser.parseTags($)
-    }
 
-    async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
-        let result: {
-            metadata: any;
-            manga: PartialSourceManga[]
-        }
-        let manga: PartialSourceManga[] = []
-
-        while (manga.length == 0)
-        {
-            result = await this.search(metadata, query)
-            metadata = result.metadata
-            manga = result.manga
-        }
-
-        return App.createPagedResults({
-            results: manga,
-            metadata
+        return this.parser.parseTags($, this.supportsTagExclusion).map(x => {
+            return {
+                id: x.id,
+                title: x.title,
+                type: x.type,
+                options: x.tags
+            }
         })
     }
 
-    private async search(metadata: any, query: SearchRequest) {
-        const page: number = metadata?.page ?? 1
+    async getTags(): Promise<Property[]> {
+        const url: string = await this.getAndSetBaseUrl()
+        const $ = await this.loadRequestData(`${url}/${this.sourceTraversalPathName}`)
+
+        return [
+            {
+                id: "genres",
+                title: "Genres",
+                tags: this.parser.parseTags($, this.supportsTagExclusion).find(x => x.id == "genres")?.tags!
+            }
+        ]
+    }
+
+    async getDirectory(searchRequest: DirectoryRequest<FilterProps>): Promise<PagedResult> {
+        if (searchRequest.listId) {
+            return this.getViewMoreItems(searchRequest)
+        }
+
+        let result: {
+            isLastPage: boolean;
+            manga: Highlight[]
+        }
+        let manga: Highlight[] = []
+        let isLastPage = false
+
+        while (manga.length == 0)
+        {
+            result = await this.search(searchRequest)
+            isLastPage = result.isLastPage
+            manga = result.manga
+        }
+
+        return {
+            results: manga,
+            isLastPage
+        }
+    }
+
+    async getDirectoryConfig(configID?: string | undefined): Promise<DirectoryConfig> {
+        if (configID) {
+            return { searchable: false }
+        }
+
+        return {
+            filters: await this.getFilters(),
+        }
+    }
+
+    private async search(query: DirectoryRequest<FilterProps>): Promise<{isLastPage: boolean, manga: Highlight[]}> {
+        const page: number = query?.page ?? 1
 
         const request = await this.constructSearchRequest(page, query)
-        const response = await this.requestManager.schedule(request, 1)
+        const response = await this.client.request(request)
         this.checkResponseErrors(response)
-        const $ = this.cheerio.load(response.data as string)
+        const $ = load(response.data as string)
         const results = await this.parser.parseSearchResults($, this)
 
-        const chapterTag = query?.includedTags.find((x: Tag) => x.id.startsWith('chapters'))
+        //const includedTags = this.supportsTagExclusion() ? query.filters as ExcludableMultiSelectProp;
+        const chapterTag =  query?.filters?.chapters
 
-        const manga: PartialSourceManga[] = []
+        const manga: Highlight[] = []
         for (const result of results) {
             if (chapterTag) {
-                const chapterCount = parseInt(chapterTag.id.replace(`chapters:`, ''))
+                const chapterCount = parseInt(chapterTag)
                 const chapterCountRegex = result.subtitle?.match(/(\d+)/)
                 if (chapterCountRegex?.[1] && parseInt(chapterCountRegex[1]) < chapterCount)
                     continue
@@ -415,119 +443,106 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
                 mangaId = await this.slugToPostId(result.slug, result.path)
             }
 
-            manga.push(App.createPartialSourceManga({
-                mangaId,
-                image: result.image,
+            manga.push({
+                id: mangaId,
+                cover: result.image,
                 title: result.title,
                 subtitle: result.subtitle
-            }))
+            })
         }
 
-        metadata = !this.parser.isLastPage($, query?.title ? 'search_request' : 'view_more')
-                   ? { page: page + 1 }
-                   : undefined
         return {
-            metadata,
+            isLastPage: this.parser.isLastPage($, query?.query ? 'search_request' : 'view_more'),
             manga
         }
     }
 
-    async constructSearchRequest(page: number, query: SearchRequest): Promise<any> {
+    async constructSearchRequest(page: number, query: DirectoryRequest<FilterProps>): Promise<any> {
         const url: string = await this.getAndSetBaseUrl()
         let urlBuilder: URLBuilder = new URLBuilder(url)
             .addPathComponent(this.sourceTraversalPathName)
             .addQueryParameter('page', page.toString())
 
-        if (query?.title) {
-            urlBuilder = urlBuilder.addQueryParameter('s', encodeURIComponent(query?.title.replace(/[’–][a-z]*/g, '') ?? ''))
+        if (query?.query) {
+            urlBuilder = urlBuilder.addQueryParameter('s', encodeURIComponent(query?.query.replace(/[’–][a-z]*/g, '') ?? ''))
         } else {
+            const excludedGenres = query.filters?.genres as ExcludableMultiSelectProp
+
             urlBuilder = urlBuilder
-                .addQueryParameter('genre', getFilterTagsBySection('genres', query?.includedTags, true))
-                .addQueryParameter('genre', getFilterTagsBySection('genres', query?.excludedTags, false, await this.supportsTagExclusion()))
-                .addQueryParameter('status', getIncludedTagBySection('status', query?.includedTags))
-                .addQueryParameter('type', getIncludedTagBySection('type', query?.includedTags))
-                .addQueryParameter('order', getIncludedTagBySection('order', query?.includedTags))
+                .addQueryParameter('genre', !this.supportsTagExclusion ? query.filters?.genres : undefined)
+                .addQueryParameter('genre', getFilterTagsBySection(excludedGenres?.idincluded, true, this.supportsTagExclusion))
+                .addQueryParameter('genre', getFilterTagsBySection(excludedGenres?.excluded, false, this.supportsTagExclusion))
+                .addQueryParameter('status', getSelectValue(query?.filters?.status))
+                .addQueryParameter('type', getSelectValue(query?.filters?.type))
+                .addQueryParameter('order', getSelectValue(query?.filters?.order))
         }
 
-        return App.createRequest({
+        return {
             url: urlBuilder.buildUrl({
                 addTrailingSlash: true,
                 includeUndefinedParameters: false
             }),
             method: 'GET'
-        })
+        }
     }
 
-    async supportsTagExclusion(): Promise<boolean> {
-        return false
-    }
+    async getSectionsForPage(link: PageLink): Promise<PageSection[]> {
+        if (link.id !== "home")
+            throw new Error("Accessing invalid page")
 
-    async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
         const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/`)
 
-        const promises: Promise<void>[] = []
+        const promises: Promise<PageSection>[] = []
         const sectionValues = Object.values(this.sections).sort((n1, n2) => n1.sortIndex - n2.sortIndex)
-        for (const section of sectionValues) {
-            if (!section.enabled) {
-                continue
-            }
-            // Let the app load empty sections
-            sectionCallback(section.section)
-        }
 
         for (const section of sectionValues) {
             if (!section.enabled) {
                 continue
             }
 
-            promises.push(new Promise(async () => {
+            promises.push((async () => {
                 section.section.items = await this.parser.parseHomeSection($, section, this)
-                sectionCallback(section.section)
-            }))
+                return section.section
+            })())
         }
 
         // Make sure the function completes
-        await Promise.all(promises)
+        const results = await Promise.allSettled(promises);
+        return results
+            .filter((x): x is PromiseFulfilledResult<PageSection> => x.status === "fulfilled")
+            .map(x => x.value)
     }
 
-    async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults> {
-        const page: number = metadata?.page ?? 1
+    async getViewMoreItems(searchRequest: DirectoryRequest): Promise<PagedResult> {
+        const page: number = searchRequest?.page ?? 1
 
         // @ts-ignore
-        const param = this.sections[homepageSectionId].getViewMoreItemsFunc(page) ?? undefined
+        const param = this.sections[searchRequest.listId].getViewMoreItemsFunc(page) ?? undefined
         if (!param) {
-            throw new Error(`Invalid homeSectionId | ${homepageSectionId}`)
+            throw new Error(`Invalid homeSectionId | ${searchRequest.listId}`)
         }
 
         const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/${param}`)
 
-        const items: PartialSourceManga[] = await this.parser.parseViewMore($, this)
-        metadata = !this.parser.isLastPage($, 'view_more')
-                   ? { page: page + 1 }
-                   : undefined
+        const items: Highlight[] = await this.parser.parseViewMore($, this)
 
-        return App.createPagedResults({
+        return {
             results: items,
-            metadata
-        })
+            isLastPage: this.parser.isLastPage($, 'view_more')
+        }
     }
 
     async slugToPostId(slug: string, path: string): Promise<string> {
-        if ((await this.stateManager.retrieve(slug)) == null) {
+        if ((await ObjectStore.string(slug)) == null) {
             const postId = await this.convertSlugToPostId(slug, path)
 
-            const existingMappedSlug = await this.stateManager.retrieve(postId)
-            if (existingMappedSlug != null) {
-                await this.stateManager.store(slug, undefined)
-            }
-
-            await this.stateManager.store(postId, slug)
-            await this.stateManager.store(slug, postId)
+            await ObjectStore.set(postId, slug)
+            await ObjectStore.set(slug, postId)
         }
 
-        const postId = await this.stateManager.retrieve(slug)
+        const postId = await ObjectStore.string(slug)
         if (!postId) {
             throw new Error(`Unable to fetch postId for slug:${slug}`)
         }
@@ -565,12 +580,12 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
 
     async convertSlugToPostId(slug: string, path: string): Promise<string> {
         const url: string = await this.getAndSetBaseUrl()
-        const request = App.createRequest({
+        const request = {
             url: `${url}/${path}/${slug}/`,
             method: 'GET',
-        })
+        }
 
-        const response = await this.requestManager.schedule(request, 1)
+        const response = await this.client.request(request)
         this.checkResponseErrors(response)
 
         let postId: any
@@ -584,7 +599,7 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             return postId?.toString()
         }
 
-        const $ = this.cheerio.load(response.data as string)
+        const $ = load(response.data as string)
 
         // Step 1: Try to get postId from shortlink
         postId = Number($('link[rel="shortlink"]')?.attr('href')?.split('/?p=')[1])
@@ -611,30 +626,29 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
     }
 
     async loadRequestData(url: string, method: string = 'GET'): Promise<CheerioStatic> {
-        const request = App.createRequest({
+        const request = {
             url,
             method
-        })
+        }
 
-        const response = await this.requestManager.schedule(request, 1)
+        const response = await this.client.request(request)
         this.checkResponseErrors(response)
-        return this.cheerio.load(response.data as string)
+        return load(response.data as string)
     }
 
-    async getCloudflareBypassRequestAsync(): Promise<Request> {
+    /*async getCloudflareBypassRequestAsync(): Promise<Request> {
         const url: string = await this.getAndSetBaseUrl()
-        return App.createRequest({
+        return {
             url: `${this.bypassPage || url}/`,
             method: 'GET',
             headers: {
-                'referer': `${url}/`,
-                'origin': `${url}/`,
-                'user-agent': await this.requestManager.getDefaultUserAgent()
+                referer: `${url}/`,
+                origin: `${url}/`,
             }
-        })
-    }
+        }
+    }*/
 
-    checkResponseErrors(response: Response): void {
+    checkResponseErrors(response: NetworkResponse): void {
         const status = response.status
         switch (status) {
             case 403:
@@ -643,5 +657,20 @@ export abstract class MangaStream implements ChapterProviding, HomePageSectionsP
             case 404:
                 throw new Error(`The requested page ${response.request.url} was not found!`)
         }
+    }
+
+    async willRequestImage(url: string): Promise<NetworkRequest> {
+        return {
+            url,
+            headers: {
+                'referer': `${this.baseUrl}/`,
+                'origin': `${this.baseUrl}/`,
+                ...(url.includes('wordpress.com') && { 'Accept': 'image/avif,image/webp,*/*' }) // Used for images hosted on Wordpress blogs
+            }
+        }
+    }
+
+    resolvePageSection(link: PageLink, sectionID: string): Promise<ResolvedPageSection> {
+        throw new Error('Method not needed.')
     }
 }
