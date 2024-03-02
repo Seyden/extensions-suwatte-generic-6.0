@@ -126,6 +126,8 @@ export class MangaStreamParser {
                 throw new Error(`Could not parse out ID when getting chapters for postId:${mangaId}`)
             }
 
+            await ObjectStore.set(`${mangaId}:${id}`, link)
+
             chapters.push({
                 chapterId: chapterNumber.toString(),
                 language: langCode,
@@ -320,8 +322,6 @@ export class MangaStreamParser {
                 console.log(`Failed to parse homepage sections for ${source.baseUrl} title (${title}) mangaId (${mangaId})`)
                 continue
             }
-
-            //console.log(`Parsing ${title} in section ${section.section.title}`)
 
             items.push({
                 id: mangaId,
