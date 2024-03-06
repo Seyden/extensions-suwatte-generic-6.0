@@ -6,9 +6,9 @@ const daisuke_1 = require("@suwatte/daisuke");
 const MadaraParser_1 = require("./MadaraParser");
 const MadaraHelper_1 = require("./MadaraHelper");
 const cheerio_1 = require("cheerio");
-const BASE_VERSION = 1.0;
+const BASE_VERSION = 1.01;
 const getExportVersion = (EXTENSION_VERSION) => {
-    return Number(BASE_VERSION.toString().split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.'));
+    return Number(BASE_VERSION + Number(EXTENSION_VERSION));
 };
 exports.getExportVersion = getExportVersion;
 class Madara {
@@ -728,13 +728,13 @@ class Parser {
                 index: sortingIndex,
                 volume: 0
             });
-            sortingIndex--;
+            sortingIndex++;
         }
         if (chapters.length == 0) {
             throw new Error(`Couldn't find any chapters for mangaId: ${mangaId}!`);
         }
         return chapters.map(chapter => {
-            chapter.index += chapters.length;
+            chapter.index -= chapters.length;
             return chapter;
         });
     }
