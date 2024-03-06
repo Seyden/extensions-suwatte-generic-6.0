@@ -29,9 +29,9 @@ import { Parser } from './MadaraParser'
 import { URLBuilder } from './MadaraHelper'
 import { load } from 'cheerio'
 
-const BASE_VERSION = 1.0
-export const getExportVersion = (EXTENSION_VERSION: string): number => {
-    return Number(BASE_VERSION.toString().split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.'))
+const BASE_VERSION = 1.01
+export const getExportVersion = (EXTENSION_VERSION: any): number => {
+    return Number(BASE_VERSION + Number(EXTENSION_VERSION))
 }
 
 export abstract class Madara implements ContentSource, PageLinkResolver, ImageRequestHandler {

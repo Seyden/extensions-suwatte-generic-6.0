@@ -116,7 +116,7 @@ export class Parser {
                 index: sortingIndex,
                 volume: 0
             })
-            sortingIndex--
+            sortingIndex++
         }
 
         if (chapters.length == 0) {
@@ -124,7 +124,7 @@ export class Parser {
         }
 
         return chapters.map(chapter => {
-            chapter.index += chapters.length
+            chapter.index -= chapters.length
             return chapter
         })
     }
