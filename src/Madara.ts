@@ -29,7 +29,7 @@ import { Parser } from './MadaraParser'
 import { URLBuilder } from './MadaraHelper'
 import { load } from 'cheerio'
 
-const BASE_VERSION = 1.01
+const BASE_VERSION = 1.02
 export const getExportVersion = (EXTENSION_VERSION: any): number => {
     return Number(BASE_VERSION + Number(EXTENSION_VERSION))
 }
@@ -94,7 +94,7 @@ export abstract class Madara implements ContentSource, PageLinkResolver, ImageRe
     /**
      * The language code the source's content is served in in string form.
      */
-    language = '🇬🇧'
+    language = 'en_GB'
 
     /**
      * Different Madara sources might have a slightly different selector which is required to parse out

@@ -23,7 +23,7 @@ export class Target extends Madara {
 
     baseUrl: string = DOMAIN
 
-    override language = '🇦🇪'
+    override language = 'ar_AE'
 
     override chapterEndpoint = 1
 
