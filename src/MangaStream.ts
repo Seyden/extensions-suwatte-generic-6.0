@@ -46,7 +46,7 @@ import { UITextField } from '@suwatte/daisuke/dist/types/UI/UIElementBuilders'
 const simpleUrl = require('simple-url')
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = 1.02
+const BASE_VERSION = 1.03
 export const getExportVersion = (EXTENSION_VERSION: any): number => {
     return Number(BASE_VERSION + Number(EXTENSION_VERSION))
 }
@@ -104,18 +104,6 @@ export abstract class MangaStream implements ContentSource, PageLinkResolver, Im
             }
 
             await this.interceptRequest(request)
-
-            /*if (isImgLink(request.url)) {
-                let overrideUrl: string = await ObjectStore.string('Domain')
-                if (overrideUrl && overrideUrl != this.baseUrl) {
-                    const basePath: any = simpleUrl.parse(this.baseUrl, true)
-                    const overridePath: any = simpleUrl.parse(overrideUrl, true)
-                    if (path.host.includes(basePath.host) || path.host.includes(overridePath.host)) {
-                        path.host = overridePath.host
-                        request.url = simpleUrl.create(path)
-                    }
-                }
-            }*/
 
             return request
         })
@@ -330,24 +318,12 @@ export abstract class MangaStream implements ContentSource, PageLinkResolver, Im
         return chapters
     }
 
-    async getChapterSlug(mangaId: string, chapterId: string): Promise<string> {
-        const chapterKey = `${mangaId}:${chapterId}`
-        let existingMappedChapterLink = await ObjectStore.string(chapterKey)
-        // If the Chapter List wasn't retrieved since the app was opened, retrieve it first and initialize it for all chapters
-        if (existingMappedChapterLink == null) {
-            await this.getChapters(mangaId)
+    async getChapterData(mangaId: string, chapterId: string, chapter?: Chapter): Promise<ChapterData> {
+        const chapterLink: string = chapter?.webUrl ?? ''
+        if (chapterLink.length == 0) {
+            throw new Error(`Could not get Chapter Data for mangaId: ${mangaId} chapterId: ${chapterId} because the webUrl was empty!`)
         }
 
-        existingMappedChapterLink = await ObjectStore.string(chapterKey)
-        if (existingMappedChapterLink == null) {
-            throw new Error(`Could not parse out Chapter Link when getting chapter details for postId: ${mangaId} chapterId: ${chapterId}`)
-        }
-
-        return existingMappedChapterLink
-    }
-
-    async getChapterData(mangaId: string, chapterId: string): Promise<ChapterData> {
-        const chapterLink: string = await this.getChapterSlug(mangaId, chapterId)
         const url: string = await this.getAndSetBaseUrl()
         const $ = await this.loadRequestData(`${url}/${chapterLink}/`)
         return this.parser.parseChapterDetails($, mangaId, chapterId)
