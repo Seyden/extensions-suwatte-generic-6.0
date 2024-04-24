@@ -17,6 +17,7 @@ export class Target extends MangaStream {
         rating: CatalogRating.MIXED,
         website: DOMAIN,
     }
+
     baseUrl: string = DOMAIN
 
     override configureSections(): void {

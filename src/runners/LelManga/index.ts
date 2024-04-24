@@ -20,7 +20,7 @@ export class Target extends MangaStream {
     }
 
     baseUrl: string = LELMANGA_DOMAIN
-    override language: string = '🇫🇷'
+    override language: string = 'fr_FR'
 
     override manga_selector_author = 'Autheur'
     override manga_selector_artist = 'Artiste'

@@ -46,11 +46,9 @@ import { UITextField } from '@suwatte/daisuke/dist/types/UI/UIElementBuilders'
 const simpleUrl = require('simple-url')
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = 1.01
-export const getExportVersion = (EXTENSION_VERSION: string): number => {
-    return Number(BASE_VERSION.toString().split('.')
-                       .map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index]))
-                       .join('.'))
+const BASE_VERSION = 1.02
+export const getExportVersion = (EXTENSION_VERSION: any): number => {
+    return Number(BASE_VERSION + Number(EXTENSION_VERSION))
 }
 
 export abstract class MangaStream implements ContentSource, PageLinkResolver, ImageRequestHandler {
@@ -150,7 +148,7 @@ export abstract class MangaStream implements ContentSource, PageLinkResolver, Im
     /**
      * The language code which this source supports.
      */
-    language: string = '🇬🇧'
+    language: string = 'en_GB'
 
     // ----GENERAL SELECTORS----
 

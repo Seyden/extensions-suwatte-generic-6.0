@@ -20,6 +20,6 @@ export class Target extends MangaStream {
     }
 
     baseUrl: string = RAWKUMA_DOMAIN
-    override language: string = '🇯🇵'
+    override language: string = 'ja_JP'
 
 }

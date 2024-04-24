@@ -21,7 +21,7 @@ export class Target extends MangaStream {
     }
 
     baseUrl: string = SKYMANGAS_DOMAIN
-    override language: string = '🇪🇸'
+    override language: string = 'es_ES'
 
     override parser = new SkyMangasParser()
 

@@ -106,8 +106,8 @@ export class MangaStreamParser {
         let langCode = source.language
 
         // Usually for Manhwa sites
-        if (mangaId.toUpperCase().endsWith('-RAW') && source.language == '🇬🇧') {
-            langCode = '🇰🇷'
+        if (mangaId.toUpperCase().endsWith('-RAW') && source.language == 'en_GB') {
+            langCode = 'ko_KR'
         }
 
         for (const chapter of $('li', 'div#chapterlist').toArray()) {
@@ -138,11 +138,11 @@ export class MangaStreamParser {
                 volume: 0,
                 webUrl: link
             })
-            sortingIndex--
+            sortingIndex++
         }
 
         return chapters.map((chapter) => {
-            chapter.index += chapters.length
+            chapter.index -= chapters.length
             return chapter
         })
     }

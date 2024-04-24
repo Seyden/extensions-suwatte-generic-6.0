@@ -18,7 +18,7 @@ export class Target extends MangaStream {
         website: DOMAIN,
     }
     override baseUrl = DOMAIN
-    override language = 'AR'
+    override language: string = 'AR'
     override sourceTraversalPathName = 'series'
     override manga_selector_author = 'المؤلف'
     override manga_selector_artist = 'الرسام'

@@ -19,7 +19,7 @@ export class Target extends MangaStream {
         website: SUSHI_SCAN_DOMAIN,
     }
     baseUrl: string = SUSHI_SCAN_DOMAIN
-    override language: string = '🇫🇷'
+    override language: string = 'fr_FR'
 
     override sourceTraversalPathName = 'catalogue'
 
