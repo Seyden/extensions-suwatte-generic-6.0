@@ -30,11 +30,9 @@ const cheerio_1 = require("cheerio");
 const UIElementBuilders_1 = require("@suwatte/daisuke/dist/types/UI/UIElementBuilders");
 const simpleUrl = require('simple-url');
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = 1.01;
+const BASE_VERSION = 1.02;
 const getExportVersion = (EXTENSION_VERSION) => {
-    return Number(BASE_VERSION.toString().split('.')
-        .map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index]))
-        .join('.'));
+    return Number(BASE_VERSION + Number(EXTENSION_VERSION));
 };
 exports.getExportVersion = getExportVersion;
 class MangaStream {
@@ -89,7 +87,7 @@ class MangaStream {
         /**
          * The language code which this source supports.
          */
-        this.language = '🇬🇧';
+        this.language = 'en_GB';
         // ----GENERAL SELECTORS----
         /**
          * The pathname between the domain and the manga.
@@ -712,8 +710,8 @@ class MangaStreamParser {
         let sortingIndex = 0;
         let langCode = source.language;
         // Usually for Manhwa sites
-        if (mangaId.toUpperCase().endsWith('-RAW') && source.language == '🇬🇧') {
-            langCode = '🇰🇷';
+        if (mangaId.toUpperCase().endsWith('-RAW') && source.language == 'en_GB') {
+            langCode = 'ko_KR';
         }
         for (const chapter of $('li', 'div#chapterlist').toArray()) {
             const title = $('span.chapternum', chapter).text().trim();
@@ -740,10 +738,10 @@ class MangaStreamParser {
                 volume: 0,
                 webUrl: link
             });
-            sortingIndex--;
+            sortingIndex++;
         }
         return chapters.map((chapter) => {
-            chapter.index += chapters.length;
+            chapter.index -= chapters.length;
             return chapter;
         });
     }
@@ -1073,7 +1071,7 @@ class Target extends MangaStream_1.MangaStream {
             website: SKYMANGAS_DOMAIN,
         };
         this.baseUrl = SKYMANGAS_DOMAIN;
-        this.language = '🇪🇸';
+        this.language = 'es_ES';
         this.parser = new SkyMangasParser_1.SkyMangasParser();
     }
     configureSections() {
