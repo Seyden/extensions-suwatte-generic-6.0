@@ -6,7 +6,7 @@ const daisuke_1 = require("@suwatte/daisuke");
 const MadaraParser_1 = require("./MadaraParser");
 const MadaraHelper_1 = require("./MadaraHelper");
 const cheerio_1 = require("cheerio");
-const BASE_VERSION = 1.01;
+const BASE_VERSION = 1.02;
 const getExportVersion = (EXTENSION_VERSION) => {
     return Number(BASE_VERSION + Number(EXTENSION_VERSION));
 };
@@ -42,7 +42,7 @@ class Madara {
         /**
          * The language code the source's content is served in in string form.
          */
-        this.language = '🇬🇧';
+        this.language = 'en_GB';
         /**
          * Different Madara sources might have a slightly different selector which is required to parse out
          * each manga object while on a search result page. This is the selector
@@ -957,7 +957,7 @@ class Target extends Madara_1.Madara {
             website: DOMAIN,
         };
         this.baseUrl = DOMAIN;
-        this.language = '🇫🇷';
+        this.language = 'fr_FR';
         this.chapterEndpoint = 1;
         this.parser = new ReaperScansFRParser_1.ReaperScansFRParser();
     }
