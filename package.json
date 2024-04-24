@@ -42,5 +42,8 @@
     "cheerio": "^1.0.0-rc.12",
     "crypto-js": "^4.1.1",
     "entities": "^4.4.0"
+  },
+  "stt": {
+    "listName": "Seyden | Suwatte - MangaStream Generic (6.0)"
   }
 }
