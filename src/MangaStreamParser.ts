@@ -102,7 +102,6 @@ export class MangaStreamParser {
 
     async parseChapterList($: CheerioSelector, mangaId: string, source: any): Promise<Chapter[]> {
         const chapters: Chapter[] = []
-        let sortingIndex = 0
         let langCode = source.language
 
         // Usually for Manhwa sites
@@ -132,15 +131,14 @@ export class MangaStreamParser {
                 number: chapterNumber,
                 title,
                 date,
-                index: sortingIndex,
+                index: 0,
                 volume: 0,
                 webUrl: link
             })
-            sortingIndex++
         }
 
         return chapters.map((chapter) => {
-            chapter.index -= chapters.length
+            chapter.index = (chapters.length - chapter.number) * 10000
             return chapter
         })
     }

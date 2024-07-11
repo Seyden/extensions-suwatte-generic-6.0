@@ -46,7 +46,7 @@ import { UITextField } from '@suwatte/daisuke/dist/types/UI/UIElementBuilders'
 const simpleUrl = require('simple-url')
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = 1.03
+const BASE_VERSION = 1.04
 export const getExportVersion = (EXTENSION_VERSION: any): number => {
     return Number(BASE_VERSION + Number(EXTENSION_VERSION))
 }
@@ -610,24 +610,12 @@ export abstract class MangaStream implements ContentSource, PageLinkResolver, Im
         return load(response.data as string)
     }
 
-    /*async getCloudflareBypassRequestAsync(): Promise<Request> {
-        const url: string = await this.getAndSetBaseUrl()
-        return {
-            url: `${this.bypassPage || url}/`,
-            method: 'GET',
-            headers: {
-                referer: `${url}/`,
-                origin: `${url}/`,
-            }
-        }
-    }*/
-
     checkResponseErrors(response: NetworkResponse): void {
         const status = response.status
         switch (status) {
             case 403:
             case 503:
-                throw new Error(`CLOUDFLARE BYPASS ERROR:\\nPlease go to the homepage of <${this.baseUrl}> and press the cloud icon.`)
+                throw new CloudflareError(response.request.url)
             case 404:
                 throw new Error(`The requested page ${response.request.url} was not found!`)
         }
