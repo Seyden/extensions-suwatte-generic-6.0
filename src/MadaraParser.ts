@@ -62,22 +62,18 @@ export class Parser {
             },
         ]
 
-        const chapters = this.parseChapterList($, mangaId, source)
-
         return {
             title,
             status,
             properties,
             summary: description,
-            cover: image,
-            ...(chapters.length > 0 && { chapters })
+            cover: image
         }
     }
 
 
     parseChapterList($: CheerioSelector, mangaId: string, source: any): Chapter[] {
         const chapters: Chapter[] = []
-        let sortingIndex = 0
 
         // For each available chapter..
         for (const obj of $('li.wp-manga-chapter  ').toArray()) {
@@ -113,10 +109,9 @@ export class Parser {
                 number: chapNum,
                 title: chapName ? this.decodeHTMLEntity(chapName) : '',
                 date: mangaTime,
-                index: sortingIndex,
+                index: 0,
                 volume: 0
             })
-            sortingIndex++
         }
 
         if (chapters.length == 0) {
@@ -124,7 +119,7 @@ export class Parser {
         }
 
         return chapters.map(chapter => {
-            chapter.index -= chapters.length
+            chapter.index = (chapters.length - chapter.number) * 10000
             return chapter
         })
     }

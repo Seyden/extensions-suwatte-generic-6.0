@@ -29,7 +29,7 @@ import { Parser } from './MadaraParser'
 import { URLBuilder } from './MadaraHelper'
 import { load } from 'cheerio'
 
-const BASE_VERSION = 1.02
+const BASE_VERSION = 1.03
 export const getExportVersion = (EXTENSION_VERSION: any): number => {
     return Number(BASE_VERSION + Number(EXTENSION_VERSION))
 }
@@ -576,23 +576,12 @@ export abstract class Madara implements ContentSource, PageLinkResolver, ImageRe
         return postId.toString()
     }
 
-    async getCloudflareBypassRequestAsync() {
-        return {
-            url: this.bypassPage || this.baseUrl,
-            method: 'GET',
-            headers: {
-                'referer': `${this.baseUrl}/`,
-                'origin': `${this.baseUrl}/`,
-            }
-        }
-    }
-
     checkResponseError(response: NetworkResponse): void {
         const status = response.status
         switch (status) {
             case 403:
             case 503:
-                throw new Error(`CLOUDFLARE BYPASS ERROR:\nPlease go to the homepage of <${this.baseUrl}> and press the cloud icon.`)
+                throw new CloudflareError(response.request.url)
             case 404:
                 throw new Error(`The requested page ${response.request.url} was not found!`)
         }
