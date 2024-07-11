@@ -30,7 +30,7 @@ const cheerio_1 = require("cheerio");
 const UIElementBuilders_1 = require("@suwatte/daisuke/dist/types/UI/UIElementBuilders");
 const simpleUrl = require('simple-url');
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = 1.03;
+const BASE_VERSION = 1.04;
 const getExportVersion = (EXTENSION_VERSION) => {
     return Number(BASE_VERSION + Number(EXTENSION_VERSION));
 };
@@ -499,23 +499,12 @@ class MangaStream {
         this.checkResponseErrors(response);
         return (0, cheerio_1.load)(response.data);
     }
-    /*async getCloudflareBypassRequestAsync(): Promise<Request> {
-        const url: string = await this.getAndSetBaseUrl()
-        return {
-            url: `${this.bypassPage || url}/`,
-            method: 'GET',
-            headers: {
-                referer: `${url}/`,
-                origin: `${url}/`,
-            }
-        }
-    }*/
     checkResponseErrors(response) {
         const status = response.status;
         switch (status) {
             case 403:
             case 503:
-                throw new Error(`CLOUDFLARE BYPASS ERROR:\\nPlease go to the homepage of <${this.baseUrl}> and press the cloud icon.`);
+                throw new CloudflareError(response.request.url);
             case 404:
                 throw new Error(`The requested page ${response.request.url} was not found!`);
         }
@@ -686,7 +675,6 @@ class MangaStreamParser {
     }
     async parseChapterList($, mangaId, source) {
         const chapters = [];
-        let sortingIndex = 0;
         let langCode = source.language;
         // Usually for Manhwa sites
         if (mangaId.toUpperCase().endsWith('-RAW') && source.language == 'en_GB') {
@@ -712,14 +700,13 @@ class MangaStreamParser {
                 number: chapterNumber,
                 title,
                 date,
-                index: sortingIndex,
+                index: 0,
                 volume: 0,
                 webUrl: link
             });
-            sortingIndex++;
         }
         return chapters.map((chapter) => {
-            chapter.index -= chapters.length;
+            chapter.index = (chapters.length - chapter.number) * 10000;
             return chapter;
         });
     }
