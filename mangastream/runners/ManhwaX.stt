@@ -30,7 +30,7 @@ const cheerio_1 = require("cheerio");
 const UIElementBuilders_1 = require("@suwatte/daisuke/dist/types/UI/UIElementBuilders");
 const simpleUrl = require('simple-url');
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = 1.04;
+const BASE_VERSION = 1.05;
 const getExportVersion = (EXTENSION_VERSION) => {
     return Number(BASE_VERSION + Number(EXTENSION_VERSION));
 };
@@ -675,6 +675,7 @@ class MangaStreamParser {
     }
     async parseChapterList($, mangaId, source) {
         const chapters = [];
+        let sortingIndex = 0;
         let langCode = source.language;
         // Usually for Manhwa sites
         if (mangaId.toUpperCase().endsWith('-RAW') && source.language == 'en_GB') {
@@ -700,15 +701,13 @@ class MangaStreamParser {
                 number: chapterNumber,
                 title,
                 date,
-                index: 0,
+                index: sortingIndex,
                 volume: 0,
                 webUrl: link
             });
+            sortingIndex++;
         }
-        return chapters.map((chapter) => {
-            chapter.index = (chapters.length - chapter.number) * 10000;
-            return chapter;
-        });
+        return chapters;
     }
     parseChapterDetails($, mangaId, chapterId) {
         const data = $.html();
