@@ -29,7 +29,7 @@ import { Parser } from './MadaraParser'
 import { URLBuilder } from './MadaraHelper'
 import { load } from 'cheerio'
 
-const BASE_VERSION = 1.03
+const BASE_VERSION = 1.04
 export const getExportVersion = (EXTENSION_VERSION: any): number => {
     return Number(BASE_VERSION + Number(EXTENSION_VERSION))
 }
@@ -378,15 +378,21 @@ export abstract class Madara implements ContentSource, PageLinkResolver, ImageRe
         const promises: Promise<PageSection>[] = []
         for (const section of sections) {
             // Get the section data
-            promises.push(
-                this.client.request(section.request).then(async response => {
-                    this.checkResponseError(response)
-                    const $ = load(response.data as string)
-                    section.section.items = await this.parser.parseHomeSection($, this)
-                    return section.section
-                })
-            )
-
+            promises.push(this.client.request(section.request)
+                              .then(async response => {
+                                  this.checkResponseError(response)
+                                  const $ = load(response.data as string)
+                                  section.section.items = await this.parser.parseHomeSection($, this)
+                                  return section.section
+                              })
+                              .catch((error) => {
+                                  if (error instanceof CloudflareError) {
+                                      throw new CloudflareError(this.baseUrl)
+                                  }
+                                  else {
+                                      throw error
+                                  }
+                              }))
         }
 
         // Make sure the function completes
