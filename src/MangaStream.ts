@@ -46,7 +46,7 @@ import { UITextField } from '@suwatte/daisuke/dist/types/UI/UIElementBuilders'
 const simpleUrl = require('simple-url')
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = 1.04
+const BASE_VERSION = 1.05
 export const getExportVersion = (EXTENSION_VERSION: any): number => {
     return Number(BASE_VERSION + Number(EXTENSION_VERSION))
 }
