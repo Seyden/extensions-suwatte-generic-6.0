@@ -283,7 +283,8 @@ class AsuraScansParser {
                 continue;
             }
             const image = this.getImageSrc($('img', manga));
-            const subtitle = section.subtitleSelectorFunc($, manga) ?? '';
+            const subtitleResult = section.subtitleSelectorFunc($, manga);
+            const subtitle = Array.isArray(subtitleResult) ? '' : (0, html_entities_1.decode)(subtitleResult) ?? '';
             const href = $('a', manga).attr('href') ?? '';
             const mangaId = this.idCleaner(href ?? '');
             if (!mangaId) {
@@ -295,7 +296,7 @@ class AsuraScansParser {
                 id: mangaId,
                 cover: image || source.fallbackImage,
                 title: (0, html_entities_1.decode)(title),
-                subtitle: (0, html_entities_1.decode)(subtitle),
+                info: Array.isArray(subtitleResult) ? subtitleResult : [subtitle],
                 webUrl: href
             });
         }
@@ -409,6 +410,7 @@ const daisuke_1 = require("@suwatte/daisuke");
 const AsuraScansParser_1 = require("./AsuraScansParser");
 const UIElementBuilders_1 = require("@suwatte/daisuke/dist/types/UI/UIElementBuilders");
 const AsuraScansHelper_1 = require("./AsuraScansHelper");
+const html_entities_1 = require("html-entities");
 const cheerio_1 = require("cheerio");
 const UrlBuilder_1 = require("./UrlBuilder");
 const simpleUrl = require('simple-url');
@@ -418,7 +420,7 @@ class Target {
     constructor() {
         this.info = {
             id: 'AsuraScans',
-            version: 2.0,
+            version: 2.01,
             name: 'AsuraScans',
             thumbnail: 'AsuraScans.png',
             rating: daisuke_1.CatalogRating.MIXED,
@@ -477,11 +479,21 @@ class Target {
                 selectorFunc: ($) => $('div.w-full', $('h3:contains(Latest Updates)')?.parent()?.next()),
                 titleSelectorFunc: ($, element) => $('span.font-medium', element).text().trim(),
                 subtitleSelectorFunc: ($, element) => {
-                    let obj = $('div.text-sm', element).first();
-                    let hiddenObj = $('div.hidden', obj);
-                    if (hiddenObj.length != 0)
-                        return hiddenObj.text().trim();
-                    return obj.text().trim();
+                    let text = $('span.inline-block', element).toArray();
+                    let tags = [];
+                    for (let tag of text) {
+                        let chapterTitle = $('span.flex', tag).text();
+                        let hiddenObj = $('div.hidden', tag);
+                        if (hiddenObj.length != 0) {
+                            let hiddenText = hiddenObj.text();
+                            if (hiddenText.includes('-')) {
+                                hiddenText = hiddenText.split('-')[0] ?? '';
+                            }
+                            chapterTitle = hiddenText.trim();
+                        }
+                        tags.push((0, html_entities_1.decode)(`${chapterTitle} - ${$('p', tag).text()}`));
+                    }
+                    return tags;
                 },
                 getViewMoreItemsFunc: (page) => `page/${page}`,
                 sortIndex: 20,
@@ -720,7 +732,7 @@ class Target {
 }
 exports.Target = Target;
 
-},{"./AsuraScansHelper":1,"./AsuraScansParser":2,"./UrlBuilder":3,"@suwatte/daisuke":5,"@suwatte/daisuke/dist/types/UI/UIElementBuilders":32,"cheerio":undefined,"simple-url":102}],5:[function(require,module,exports){
+},{"./AsuraScansHelper":1,"./AsuraScansParser":2,"./UrlBuilder":3,"@suwatte/daisuke":5,"@suwatte/daisuke/dist/types/UI/UIElementBuilders":32,"cheerio":undefined,"html-entities":90,"simple-url":102}],5:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
