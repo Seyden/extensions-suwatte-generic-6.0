@@ -6,7 +6,6 @@ Write me a DM in [Discord Seyden#1647](https://discordapp.com/users/197818400196
 
 ## Current Repo
 
-| Source Type | Description |          Link |
-| ---        |    ----   |         --- |
-| MangaStream      | MangaStream Generic      | [Click me!](https://seyden.github.io/extensions-suwatte-generic-6.0/mangastream/)    |
-| Madara      | Madara Generic      | [Click me!](https://seyden.github.io/extensions-suwatte-generic-6.0/madara/)    |
+| Source Type | Description | Link                                                                          |
+|-------------|    ----   |-------------------------------------------------------------------------------|
+| Generic     |  Generic  | [Click me!](https://seyden.github.io/extensions-suwatte-generic-6.0/generic/) ||
