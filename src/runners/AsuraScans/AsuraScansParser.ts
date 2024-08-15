@@ -247,7 +247,8 @@ export class AsuraScansParser{
             }
 
             const image = this.getImageSrc($('img', manga))
-            const subtitle = section.subtitleSelectorFunc($, manga) ?? ''
+            const subtitleResult = section.subtitleSelectorFunc($, manga)
+            const subtitle = Array.isArray(subtitleResult) ? '' : decodeHTMLEntity(subtitleResult) ?? ''
             const href = $('a', manga).attr('href') ?? ''
             const mangaId: string = this.idCleaner(href ?? '')
 
@@ -262,7 +263,7 @@ export class AsuraScansParser{
                 id: mangaId,
                 cover: image || source.fallbackImage,
                 title: decodeHTMLEntity(title),
-                subtitle: decodeHTMLEntity(subtitle),
+                info: Array.isArray(subtitleResult) ? subtitleResult  : [subtitle],
                 webUrl: href
             })
         }

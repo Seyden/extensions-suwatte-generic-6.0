@@ -37,6 +37,8 @@ import {
     getSelectValue,
     HomeSectionData
 } from './AsuraScansHelper'
+
+import { decode as decodeHTMLEntity } from 'html-entities'
 import { load } from 'cheerio'
 import { URLBuilder } from './UrlBuilder'
 import { RunnerPreferenceProvider } from '@suwatte/daisuke/dist/runners/Runner/extensions/Preferences'
@@ -50,7 +52,7 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
 
     info: RunnerInfo = {
         id: 'AsuraScans',
-        version: 2.0,
+        version: 2.01,
         name: 'AsuraScans',
         thumbnail: 'AsuraScans.png',
         rating: CatalogRating.MIXED,
@@ -144,11 +146,24 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
             selectorFunc: ($: CheerioStatic) => $('div.w-full', $('h3:contains(Latest Updates)')?.parent()?.next()),
             titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span.font-medium', element).text().trim(),
             subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => {
-                let obj = $('div.text-sm', element).first()
-                let hiddenObj = $('div.hidden', obj)
-                if (hiddenObj.length != 0)
-                    return hiddenObj.text().trim()
-                return obj.text().trim()
+                let text = $('span.inline-block', element).toArray()
+                let tags = []
+                for (let tag of text) {
+                    let chapterTitle = $('span.flex', tag).text()
+                    let hiddenObj = $('div.hidden', tag)
+                    if (hiddenObj.length != 0) {
+                        let hiddenText = hiddenObj.text()
+                        if (hiddenText.includes('-')) {
+                            hiddenText = hiddenText.split('-')[0] ?? ''
+                        }
+
+                        chapterTitle = hiddenText.trim()
+                    }
+
+                    tags.push(decodeHTMLEntity(`${chapterTitle} - ${$('p', tag).text()}`))
+                }
+
+                return tags
             },
             getViewMoreItemsFunc: (page: string) => `page/${page}`,
             sortIndex: 20,
