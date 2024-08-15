@@ -2,7 +2,7 @@ import { convertDate } from './LanguageUtils'
 
 import { HomeSectionData } from './MangaStreamHelper'
 
-import entities = require('entities')
+import { decode as decodeHTMLEntity } from 'html-entities'
 import {
     Chapter,
     ChapterData,
@@ -18,20 +18,20 @@ import {
 export class MangaStreamParser {
     async parseMangaDetails($: CheerioStatic, mangaId: string, source: any): Promise<Content> {
         const titles: string[] = []
-        titles.push(this.decodeHTMLEntity($('h1.entry-title').text().trim()))
+        titles.push(decodeHTMLEntity($('h1.entry-title').text().trim()))
 
         const altTitles = $(`span:contains(${source.manga_selector_AlternativeTitles}), b:contains(${source.manga_selector_AlternativeTitles})+span, .imptdt:contains(${source.manga_selector_AlternativeTitles}) i, h1.entry-title+span`).contents().remove().last().text().split(',') //Language dependant
         for (const title of altTitles) {
             if (title == '') {
                 continue
             }
-            titles.push(this.decodeHTMLEntity(title.trim()))
+            titles.push(decodeHTMLEntity(title.trim()))
         }
 
         const author = $(`span:contains(${source.manga_selector_author}), .fmed b:contains(${source.manga_selector_author})+span, .imptdt:contains(${source.manga_selector_author}) i`).contents().remove().last().text().trim() //Language dependant
         const artist = $(`span:contains(${source.manga_selector_artist}), .fmed b:contains(${source.manga_selector_artist})+span, .imptdt:contains(${source.manga_selector_artist}) i`).contents().remove().last().text().trim() //Language dependant
         const image = this.getImageSrc($('img', 'div[itemprop="image"]'))
-        const description = this.decodeHTMLEntity($('div[itemprop="description"] p').text().trim())
+        const description = decodeHTMLEntity($('div[itemprop="description"] p').text().trim())
 
         const arrayTags: Tag[] = []
         for (const tag of $('a', source.manga_tag_selector_box).toArray()) {
@@ -244,8 +244,8 @@ export class MangaStreamParser {
                 slug,
                 path,
                 image: image || source.fallbackImage,
-                title: this.decodeHTMLEntity(title),
-                subtitle: this.decodeHTMLEntity(subtitle)
+                title: decodeHTMLEntity(title),
+                subtitle: decodeHTMLEntity(subtitle)
             })
         }
 
@@ -277,8 +277,8 @@ export class MangaStreamParser {
             items.push({
                 id: mangaId,
                 cover: image || source.fallbackImage,
-                title: this.decodeHTMLEntity(title),
-                subtitle: this.decodeHTMLEntity(subtitle)
+                title: decodeHTMLEntity(title),
+                subtitle: decodeHTMLEntity(subtitle)
             })
         }
 
@@ -321,8 +321,8 @@ export class MangaStreamParser {
             items.push({
                 id: mangaId,
                 cover: image || source.fallbackImage,
-                title: this.decodeHTMLEntity(title),
-                subtitle: this.decodeHTMLEntity(subtitle)
+                title: decodeHTMLEntity(title),
+                subtitle: decodeHTMLEntity(subtitle)
             })
         }
 
@@ -369,14 +369,7 @@ export class MangaStreamParser {
 
         image = image?.split('?resize')[0] ?? ''
 
-        return encodeURI(decodeURI(this.decodeHTMLEntity(image?.trim() ?? '')))
-    }
-
-    protected decodeHTMLEntity(str: string): string {
-        if (!str) {
-            return ''
-        }
-        return entities.decodeHTML(str)
+        return encodeURI(decodeURI(decodeHTMLEntity(image?.trim() ?? '')))
     }
 
     protected idCleaner(str: string): string {

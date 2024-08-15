@@ -3,7 +3,7 @@ import { RunnerInfo, CatalogRating } from "@suwatte/daisuke";
 import {
     getExportVersion,
     Madara
-} from '../../Madara'
+} from '../../templates/Madara/Madara'
 
 const DOMAIN = 'https://allporncomic.com'
 export class Target extends Madara {

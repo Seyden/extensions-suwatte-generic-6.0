@@ -9,7 +9,7 @@ import {
 import {
     getExportVersion,
     Madara
-} from '../../Madara'
+} from '../../templates/Madara/Madara'
 
 import {
     SamuraiScanParser

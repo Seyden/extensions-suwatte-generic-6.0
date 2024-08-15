@@ -3,24 +3,24 @@ import { RunnerInfo, CatalogRating } from "@suwatte/daisuke";
 import {
     getExportVersion,
     MangaStream
-} from '../../MangaStream'
+} from '../../templates/MangaStream/MangaStream'
 
-const DOMAIN = 'https://elarctoon.com'
+const DOMAIN = 'https://elarctoons.biz'
 
 export class Target extends MangaStream {
 
     info: RunnerInfo = {
-        id: 'ElarcPage',
+        id: 'ElarcToon',
         version: getExportVersion('0.0'),
-        name: 'ElarcPage',
-        thumbnail: 'ElarcPage.png',
+        name: 'ElarcToon',
+        thumbnail: 'ElarcToon.png',
         rating: CatalogRating.MIXED,
         website: DOMAIN,
     }
 
     baseUrl: string = DOMAIN
 
-    override sourceTraversalPathName = 'nowstreaming'
+    override sourceTraversalPathName = 'library'
 
     override configureSections(): void {
         this.sections['new_titles'].enabled = false

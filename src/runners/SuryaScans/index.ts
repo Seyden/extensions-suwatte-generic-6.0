@@ -3,9 +3,9 @@ import { RunnerInfo, CatalogRating } from "@suwatte/daisuke";
 import {
     getExportVersion,
     MangaStream
-} from '../../MangaStream'
+} from '../../templates/MangaStream/MangaStream'
 
-const DOMAIN = 'https://suryatoon.com'
+const DOMAIN = 'https://genztoons.com'
 
 export class Target extends MangaStream {
 

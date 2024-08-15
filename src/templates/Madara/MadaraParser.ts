@@ -13,14 +13,14 @@ import {
     extractVariableValues
 } from './MadaraDecrypter'
 import { ChapterPage } from '@suwatte/daisuke/dist/types/content/ChapterData'
-import entities = require('entities')
+import { decode as decodeHTMLEntity } from 'html-entities'
 
 export class Parser {
     async parseMangaDetails($: CheerioStatic, mangaId: string, source: any): Promise<Content> {
-        const title: string = this.decodeHTMLEntity($('div.post-title h1, div#manga-title h1').children().remove().end().text().trim())
-        const author: string = this.decodeHTMLEntity($('div.author-content').first().text().replace('\\n', '').trim()).replace('Updating', '')
-        const artist: string = this.decodeHTMLEntity($('div.artist-content').first().text().replace('\\n', '').trim()).replace('Updating', '')
-        const description: string = this.decodeHTMLEntity($('div.description-summary').first().text()).replace('Show more', '').trim()
+        const title: string = decodeHTMLEntity($('div.post-title h1, div#manga-title h1').children().remove().end().text().trim())
+        const author: string = decodeHTMLEntity($('div.author-content').first().text().replace('\\n', '').trim()).replace('Updating', '')
+        const artist: string = decodeHTMLEntity($('div.artist-content').first().text().replace('\\n', '').trim()).replace('Updating', '')
+        const description: string = decodeHTMLEntity($('div.description-summary').first().text()).replace('Show more', '').trim()
 
         const image: string = encodeURI(await this.getImageSrc($('div.summary_image img').first(), source))
         const parsedStatus: string = $('div.summary-content', $('div.post-content_item').last()).text().trim()
@@ -108,7 +108,7 @@ export class Parser {
                 chapterId: id,
                 language: source.language,
                 number: chapNum,
-                title: chapName ? this.decodeHTMLEntity(chapName) : '',
+                title: chapName ? decodeHTMLEntity(chapName) : '',
                 date: mangaTime,
                 index: sortingIndex,
                 volume: 0
@@ -197,8 +197,8 @@ export class Parser {
                 slug: slug,
                 path: path,
                 image: image,
-                title: this.decodeHTMLEntity(title),
-                subtitle: this.decodeHTMLEntity(subtitle)
+                title: decodeHTMLEntity(title),
+                subtitle: decodeHTMLEntity(subtitle)
             })
         }
 
@@ -224,16 +224,11 @@ export class Parser {
             items.push({
                 id: String(source.usePostIds ? postId : slug),
                 cover: image,
-                title: this.decodeHTMLEntity(title),
-                subtitle: this.decodeHTMLEntity(subtitle)
+                title: decodeHTMLEntity(title),
+                subtitle: decodeHTMLEntity(subtitle)
             })
         }
         return items
-    }
-
-    // UTILITY METHODS
-    protected decodeHTMLEntity(str: string): string {
-        return entities.decodeHTML(str)
     }
 
     async getImageSrc(imageObj: Cheerio | undefined, source: any): Promise<string> {
@@ -277,7 +272,7 @@ export class Parser {
         // Malforumed url fix (Turns https:///example.com into https://example.com (or the http:// equivalent))
         image = image?.replace(/https:\/\/\//g, 'https://') // only changes urls with https protocol
 
-        return decodeURI(this.decodeHTMLEntity(image ?? ''))
+        return decodeURI(decodeHTMLEntity(image ?? ''))
     }
 
     parseDate = (date: string): Date => {

@@ -4,7 +4,7 @@ import { RunnerInfo, CatalogRating } from "@suwatte/daisuke";
 import {
     getExportVersion,
     MangaStream
-} from '../../MangaStream'
+} from '../../templates/MangaStream/MangaStream'
 import { SkyMangasParser } from './SkyMangasParser'
 
 const SKYMANGAS_DOMAIN = 'https://skymangas.com'

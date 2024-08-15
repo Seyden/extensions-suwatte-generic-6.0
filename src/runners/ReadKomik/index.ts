@@ -4,7 +4,7 @@ import { RunnerInfo, CatalogRating } from "@suwatte/daisuke";
 import {
     getExportVersion,
     MangaStream
-} from '../../MangaStream'
+} from '../../templates/MangaStream/MangaStream'
 
 const READKOMIK_DOMAIN = 'https://readkomik.com'
 

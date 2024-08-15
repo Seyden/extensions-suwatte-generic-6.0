@@ -1,6 +1,6 @@
 import {
     Parser
-} from '../../MadaraParser'
+} from '../../templates/Madara/MadaraParser'
 
 export class MangaLekParser extends Parser {
 

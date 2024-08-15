@@ -3,9 +3,9 @@ import { RunnerInfo, CatalogRating } from '@suwatte/daisuke'
 import {
     getExportVersion,
     Madara
-} from '../../Madara'
+} from '../../templates/Madara/Madara'
 
-const DOMAIN = 'https://drakescans.com'
+const DOMAIN = 'https://drakecomic.com'
 
 export class Target extends Madara {
 
@@ -19,6 +19,4 @@ export class Target extends Madara {
     }
 
     baseUrl: string = DOMAIN
-
-    override chapterEndpoint = 1
 }

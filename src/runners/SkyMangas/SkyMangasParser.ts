@@ -1,4 +1,4 @@
-import { MangaStreamParser } from '../../MangaStreamParser'
+import { MangaStreamParser } from '../../templates/MangaStream/MangaStreamParser'
 import {
     ChapterData,
     ChapterPage

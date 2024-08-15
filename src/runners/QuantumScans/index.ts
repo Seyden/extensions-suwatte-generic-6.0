@@ -3,9 +3,9 @@ import { RunnerInfo, CatalogRating } from "@suwatte/daisuke";
 import {
     getExportVersion,
     MangaStream
-} from '../../MangaStream'
+} from '../../templates/MangaStream/MangaStream'
 
-const DOMAIN = 'https://readers-point.space'
+const DOMAIN = 'https://qscomics.org'
 
 export class Target extends MangaStream {
 

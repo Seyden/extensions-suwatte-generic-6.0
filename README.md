@@ -1,2 +1,2 @@
-# MangaStream Extensions
-[Click me](https://seyden.github.io/extensions-generic-0.8/mangastream/) to go to the index page!
+# Generic Suwatte Extensions
+[Click me](https://seyden.github.io/extensions-suwatte-generic-6.0/generic/) to go to the index page!

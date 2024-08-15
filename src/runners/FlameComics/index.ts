@@ -3,9 +3,9 @@ import { RunnerInfo, CatalogRating } from "@suwatte/daisuke";
 import {
     getExportVersion,
     MangaStream
-} from '../../MangaStream'
+} from '../../templates/MangaStream/MangaStream'
 
-const DOMAIN = 'https://flamecomics.com'
+const DOMAIN = 'https://flamecomics.me'
 
 export class Target extends MangaStream {
 

@@ -16,7 +16,7 @@ import {
     HomeSectionData
 } from './AsuraScansHelper'
 
-import entities = require('entities')
+import { decode as decodeHTMLEntity } from 'html-entities'
 import { load } from 'cheerio'
 
 export class AsuraScansParser{
@@ -36,7 +36,7 @@ export class AsuraScansParser{
         const artist = comicObj.comic.artist?.trim()
         const image = comicObj.comic.thumb
         const covers = [comicObj.comic.cover]
-        const description = this.decodeHTMLEntity($('span.font-medium').text().trim().replace(/\\r\\n/gm, '\n'))
+        const description = decodeHTMLEntity($('span.font-medium').text().trim().replace(/\\r\\n/gm, '\n'))
         //const rating = comicObj.comic.rating
 
         let slug = comicObj.comic.slug?.trim()
@@ -222,8 +222,8 @@ export class AsuraScansParser{
             results.push({
                 mangaId,
                 image: image || source.fallbackImage,
-                title: this.decodeHTMLEntity(title),
-                subtitle: this.decodeHTMLEntity(subtitle)
+                title: decodeHTMLEntity(title),
+                subtitle: decodeHTMLEntity(subtitle)
             })
         }
 
@@ -261,8 +261,8 @@ export class AsuraScansParser{
             items.push({
                 id: mangaId,
                 cover: image || source.fallbackImage,
-                title: this.decodeHTMLEntity(title),
-                subtitle: this.decodeHTMLEntity(subtitle),
+                title: decodeHTMLEntity(title),
+                subtitle: decodeHTMLEntity(subtitle),
                 webUrl: href
             })
         }
@@ -302,14 +302,7 @@ export class AsuraScansParser{
 
         image = image?.split('?resize')[0] ?? ''
 
-        return decodeURI(this.decodeHTMLEntity(image?.trim() ?? ''))
-    }
-
-    protected decodeHTMLEntity(str: string): string {
-        if (!str) {
-            return ''
-        }
-        return entities.decodeHTML(str)
+        return decodeURI(decodeHTMLEntity(image?.trim() ?? ''))
     }
 
     protected idCleaner(str: string): string {

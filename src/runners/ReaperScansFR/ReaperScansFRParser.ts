@@ -4,7 +4,9 @@ import {
 
 import {
     Parser
-} from '../../MadaraParser'
+} from '../../templates/Madara/MadaraParser'
+
+import { decode as decodeHTMLEntity } from 'html-entities'
 
 export class ReaperScansFRParser extends Parser {
 
@@ -44,7 +46,7 @@ export class ReaperScansFRParser extends Parser {
                 chapterId: id,
                 language: source.language,
                 number: chapNum,
-                title: chapName ? this.decodeHTMLEntity(chapName) : '',
+                title: chapName ? decodeHTMLEntity(chapName) : '',
                 date: mangaTime,
                 index: sortingIndex,
                 volume: 0,

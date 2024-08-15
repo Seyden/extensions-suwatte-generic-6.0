@@ -4,9 +4,9 @@ import { RunnerInfo, CatalogRating } from "@suwatte/daisuke";
 import {
     getExportVersion,
     MangaStream
-} from '../../MangaStream'
+} from '../../templates/MangaStream/MangaStream'
 
-const LUMINOUSSCANS_DOMAIN = 'https://lumitoon.com'
+const LUMINOUSSCANS_DOMAIN = 'https://luminous-scans.com'
 
 export class Target extends MangaStream {
 

@@ -1,8 +1,8 @@
 {
   "name": "extensions-suwatte-generic-6.0",
   "version": "6.0.0",
-  "repositoryName": "Suwatte - MangaStream Generic (6.0)",
-  "description": "Suwatte - MangaStream Generic for 6.0!",
+  "repositoryName": "Suwatte - Generic (6.0)",
+  "description": "Suwatte - Generic for 6.0!",
   "main": "index.js",
   "scripts": {
     "test": "jest",
@@ -41,9 +41,9 @@
     "@suwatte/validate": "^3.0.0",
     "cheerio": "^1.0.0-rc.12",
     "crypto-js": "^4.1.1",
-    "entities": "^4.4.0"
+    "html-entities": "^2.5.2"
   },
   "stt": {
-    "listName": "Seyden | Suwatte - MangaStream Generic (6.0)"
+    "listName": "Seyden | Suwatte - Generic (6.0)"
   }
 }

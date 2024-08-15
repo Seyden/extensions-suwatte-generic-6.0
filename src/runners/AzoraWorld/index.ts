@@ -12,7 +12,7 @@ import {
 import {
     getExportVersion,
     Madara
-} from '../../Madara'
+} from '../../templates/Madara/Madara'
 
 import { AzoraWorldParser } from './AzoraWorldParser'
 
