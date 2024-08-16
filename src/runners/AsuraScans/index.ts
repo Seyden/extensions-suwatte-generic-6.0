@@ -52,7 +52,7 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
 
     info: RunnerInfo = {
         id: 'AsuraScans',
-        version: 2.01,
+        version: 2.02,
         name: 'AsuraScans',
         thumbnail: 'AsuraScans.png',
         rating: CatalogRating.MIXED,

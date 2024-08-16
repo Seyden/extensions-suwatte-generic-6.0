@@ -2,7 +2,6 @@
 import {
     Chapter,
     ChapterData,
-    ChapterPage,
     Content,
     ContentType,
     FilterType,
@@ -152,16 +151,16 @@ export class AsuraScansParser{
     }
 
     parseChapterDetails(data: string): ChapterData {
-        const pages: ChapterPage[] = []
+        const pages = new Set<string>()
 
         const matches = data.matchAll(/(https:\/\/gg\.asuracomic\.net\/storage\/comics\/[^"\\]+)/gi)
         for (const match of Array.from(matches)) {
             const url = (match[1] ?? '').replace(' ', '%20')
-            pages.push({ url })
+            pages.add(url)
         }
 
         return {
-            pages
+            pages: [...pages].map(page => ({ url: page }))
         }
     }
 
