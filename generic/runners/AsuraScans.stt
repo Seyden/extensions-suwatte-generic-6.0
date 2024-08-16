@@ -204,14 +204,14 @@ class AsuraScansParser {
         return chapters;
     }
     parseChapterDetails(data) {
-        const pages = [];
+        const pages = new Set();
         const matches = data.matchAll(/(https:\/\/gg\.asuracomic\.net\/storage\/comics\/[^"\\]+)/gi);
         for (const match of Array.from(matches)) {
             const url = (match[1] ?? '').replace(' ', '%20');
-            pages.push({ url });
+            pages.add(url);
         }
         return {
-            pages
+            pages: [...pages].map(page => ({ url: page }))
         };
     }
     parseTags(data) {
@@ -420,7 +420,7 @@ class Target {
     constructor() {
         this.info = {
             id: 'AsuraScans',
-            version: 2.01,
+            version: 2.02,
             name: 'AsuraScans',
             thumbnail: 'AsuraScans.png',
             rating: daisuke_1.CatalogRating.MIXED,
