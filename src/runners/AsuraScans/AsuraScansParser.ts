@@ -2,12 +2,13 @@
 import {
     Chapter,
     ChapterData,
+    ChapterPage,
     Content,
     ContentType,
     FilterType,
     Highlight,
     Property,
-    PublicationStatus,
+    PublicationStatus
 } from '@suwatte/daisuke'
 
 import {
@@ -44,7 +45,7 @@ export class AsuraScansParser{
             await source.setMangaSlug(mangaId, slug)
         }
 
-        const rawStatus = comicObj.comic.status.name.trim()
+        const rawStatus = comicObj.comic.status?.name?.trim() ?? ''
         let status
         switch (rawStatus.toLowerCase()) {
             case source.manga_StatusTypes.DROPPED.toLowerCase():
@@ -151,16 +152,18 @@ export class AsuraScansParser{
     }
 
     parseChapterDetails(data: string): ChapterData {
-        const pages = new Set<string>()
+        const pages: ChapterPage[] = []
 
-        const matches = data.matchAll(/(https:\/\/gg\.asuracomic\.net\/storage\/comics\/[^"\\]+)/gi)
-        for (const match of Array.from(matches)) {
-            const url = (match[1] ?? '').replace(' ', '%20')
-            pages.add(url)
+        const $ = load(data, { _useHtmlParser2: true })
+
+        for (const img of $('img', 'div.py-8.-mx-5').toArray()) {
+            const image = $(img).attr('src') ?? ''
+            if (!image) continue
+            pages.push({ url: image.trim() })
         }
 
         return {
-            pages: [...pages].map(page => ({ url: page }))
+            pages: pages
         }
     }
 
