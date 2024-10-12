@@ -15,7 +15,6 @@ import {
     ImageRequestHandler,
     NetworkClientBuilder,
     NetworkRequest,
-    NetworkResponse,
     PagedResult,
     PageLink,
     PageLinkResolver,
@@ -23,7 +22,8 @@ import {
     Property,
     ResolvedPageSection,
     RunnerInfo,
-    SectionStyle
+    SectionStyle,
+    RunnerPreferenceProvider
 } from '@suwatte/daisuke'
 import { AsuraScansParser } from './AsuraScansParser'
 import { UITextField } from '@suwatte/daisuke/dist/types/UI/UIElementBuilders'
@@ -32,16 +32,19 @@ import {
     StatusTypes
 } from './AsuraScansInterfaces'
 import {
+    checkResponseErrors,
     createHomeSection,
     DefaultHomeSectionData,
+    getMangaSlug,
     getSelectValue,
-    HomeSectionData
+    HomeSectionData,
+    loadCheerioData,
+    loadRequestData
 } from './AsuraScansHelper'
 
 import { decode as decodeHTMLEntity } from 'html-entities'
 import { load } from 'cheerio'
 import { URLBuilder } from './UrlBuilder'
-import { RunnerPreferenceProvider } from '@suwatte/daisuke/dist/runners/Runner/extensions/Preferences'
 
 const simpleUrl = require('simple-url')
 
@@ -61,23 +64,57 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
 
     parser = new AsuraScansParser()
 
-    async getPreferenceMenu(): Promise<Form> {
-        return {
-            sections: [
-                {
-                    footer: 'Override the domain url for the source.',
-                    children: [
-                        UITextField({
-                            id: 'domain',
-                            title: 'Domain',
-                            value: await this.getBaseUrl(),
-                            async didChange(value) {
-                                return ObjectStore.set('Domain', value)
-                            }
-                        })
-                    ]
+    language: string = 'en_GB'
+
+    sourceTraversalPathName = 'series'
+
+    fallbackImage = 'https://i.imgur.com/GYUxEX8.png'
+
+    manga_StatusTypes: StatusTypes = {
+        COMINGSOON: 'COMING SOON',
+        HIATUS: 'HIATUS',
+        SEASONEND: 'SEASON END',
+        ONGOING: 'ONGOING',
+        COMPLETED: 'COMPLETED',
+        DROPPED: 'DROPPED'
+    }
+
+    sections: Record<'popular_today' | 'latest_update', HomeSectionData> = {
+        'popular_today': {
+            ...DefaultHomeSectionData,
+            section: createHomeSection('popular_today', 'Popular Today', false, SectionStyle.GALLERY),
+            selectorFunc: ($: CheerioStatic) => $('div.group', $('h3:contains(Popular Today)')?.parent()?.next()?.next()),
+            titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span.block', element).text().trim(),
+            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span.block', element)?.next()?.text().trim(),
+            sortIndex: 10
+        },
+        'latest_update': {
+            ...DefaultHomeSectionData,
+            section: createHomeSection('latest_update', 'Latest Updates', false, SectionStyle.ITEM_LIST),
+            selectorFunc: ($: CheerioStatic) => $('div.w-full', $('h3:contains(Latest Updates)')?.parent()?.next()),
+            titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span.font-medium', element).text().trim(),
+            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => {
+                let text = $('span.inline-block', element).toArray()
+                let tags = []
+                for (let tag of text) {
+                    let chapterTitle = $('span.flex', tag).text()
+                    let hiddenObj = $('div.hidden', tag)
+                    if (hiddenObj.length != 0) {
+                        let hiddenText = hiddenObj.text()
+                        if (hiddenText.includes('-')) {
+                            hiddenText = hiddenText.split('-')[0] ?? ''
+                        }
+
+                        chapterTitle = hiddenText.trim()
+                    }
+
+                    tags.push(decodeHTMLEntity(`${chapterTitle} - ${$('p.ml-2', tag).text()}`))
                 }
-            ]
+
+                return tags
+            },
+            getViewMoreItemsFunc: (page: string) => `page/${page}`,
+            sortIndex: 20,
         }
     }
 
@@ -109,101 +146,33 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
         })
         .build()
 
-
-    baseUrl: string = ASURASCANS_DOMAIN
-    async getBaseUrl(): Promise<string> {
-        const settingsUrl: string = await ObjectStore.string('Domain') ?? this.baseUrl
-        return settingsUrl ? settingsUrl : this.baseUrl
-    }
-
-    language: string = 'en_GB'
-
-    sourceTraversalPathName = 'series'
-
-    fallbackImage = 'https://i.imgur.com/GYUxEX8.png'
-
-    manga_StatusTypes: StatusTypes = {
-        COMINGSOON: 'COMING SOON',
-        HIATUS: 'HIATUS',
-        SEASONEND: 'SEASON END',
-        ONGOING: 'ONGOING',
-        COMPLETED: 'COMPLETED',
-        DROPPED: 'DROPPED'
-    }
-
-    sections: Record<'popular_today' | 'latest_update' | 'top_alltime' | 'top_monthly' | 'top_weekly', HomeSectionData> = {
-        'popular_today': {
-            ...DefaultHomeSectionData,
-            section: createHomeSection('popular_today', 'Popular Today', false, SectionStyle.GALLERY),
-            selectorFunc: ($: CheerioStatic) => $('div.group', $('h3:contains(Popular Today)')?.parent()?.next()?.next()),
-            titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span.block', element).text().trim(),
-            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span.block', element)?.next()?.text().trim(),
-            sortIndex: 10
-        },
-        'latest_update': {
-            ...DefaultHomeSectionData,
-            section: createHomeSection('latest_update', 'Latest Updates', false, SectionStyle.ITEM_LIST),
-            selectorFunc: ($: CheerioStatic) => $('div.w-full', $('h3:contains(Latest Updates)')?.parent()?.next()),
-            titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span.font-medium', element).text().trim(),
-            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => {
-                let text = $('span.inline-block', element).toArray()
-                let tags = []
-                for (let tag of text) {
-                    let chapterTitle = $('span.flex', tag).text()
-                    let hiddenObj = $('div.hidden', tag)
-                    if (hiddenObj.length != 0) {
-                        let hiddenText = hiddenObj.text()
-                        if (hiddenText.includes('-')) {
-                            hiddenText = hiddenText.split('-')[0] ?? ''
-                        }
-
-                        chapterTitle = hiddenText.trim()
-                    }
-
-                    tags.push(decodeHTMLEntity(`${chapterTitle} - ${$('p', tag).text()}`))
+    async getPreferenceMenu(): Promise<Form> {
+        return {
+            sections: [
+                {
+                    footer: 'Override the domain url for the source.',
+                    children: [
+                        UITextField({
+                            id: 'domain',
+                            title: 'Domain',
+                            value: await this.getBaseUrl(),
+                            async didChange(value) {
+                                return ObjectStore.set('Domain', value)
+                            }
+                        })
+                    ]
                 }
-
-                return tags
-            },
-            getViewMoreItemsFunc: (page: string) => `page/${page}`,
-            sortIndex: 20,
-        },
-        'top_alltime': {
-            ...DefaultHomeSectionData,
-            section: createHomeSection('top_alltime', 'Top All Time', false),
-            selectorFunc: ($: CheerioStatic) => $('li', $('div.serieslist.pop.wpop.wpop-alltime')),
-            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span a', element).toArray().map(x => $(x).text().trim()).join(', '),
-            sortIndex: 30,
-            enabled: false
-        },
-        'top_monthly': {
-            ...DefaultHomeSectionData,
-            section: createHomeSection('top_monthly', 'Top Monthly', false),
-            selectorFunc: ($: CheerioStatic) => $('li', $('div.serieslist.pop.wpop.wpop-monthly')),
-            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span a', element).toArray().map(x => $(x).text().trim()).join(', '),
-            sortIndex: 40,
-            enabled: false
-        },
-        'top_weekly': {
-            ...DefaultHomeSectionData,
-            section: createHomeSection('top_weekly', 'Top Weekly', false),
-            selectorFunc: ($: CheerioStatic) => $('li', $('div.serieslist.pop.wpop.wpop-weekly')),
-            subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span a', element).toArray().map(x => $(x).text().trim()).join(', '),
-            sortIndex: 50,
-            enabled: false
+            ]
         }
     }
 
-    async getMangaSlug(mangaId: string): Promise<string | null> {
-        return await ObjectStore.string(`${mangaId}:slug`)
-    }
-
-    async setMangaSlug(mangaId: string, link: string): Promise<void> {
-        await ObjectStore.set(`${mangaId}:slug`, link)
+    async getBaseUrl(): Promise<string> {
+        const settingsUrl: string = await ObjectStore.string('Domain') ?? ASURASCANS_DOMAIN
+        return settingsUrl ? settingsUrl : ASURASCANS_DOMAIN
     }
 
     async getMangaShareUrl(mangaId: string): Promise<string> {
-        const slug: string | null = await this.getMangaSlug(mangaId)
+        const slug: string | null = await getMangaSlug(mangaId)
         if (!slug) {
             throw new Error(`Couldn't find a url for mangaId ${mangaId}, try migrating the title or contact a developer!`)
         }
@@ -214,7 +183,7 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
 
     async getMangaData(mangaId: string): Promise<string> {
         const url = await this.getMangaShareUrl(mangaId)
-        return await this.loadRequestData(url)
+        return await loadRequestData(this.client, url)
     }
 
     async getContent(mangaId: string): Promise<Content> {
@@ -233,31 +202,23 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
         }
 
         const url: string = await this.getBaseUrl()
-        const data = await this.loadRequestData(`${url}/${chapterLink}/`)
+        const data = await loadRequestData(this.client, `${url}/${chapterLink}/`)
         return this.parser.parseChapterDetails(data)
     }
 
     async getFilters(): Promise<DirectoryFilter[]> {
-        const data = await this.loadRequestData(`${ASURASCANS_API_DOMAIN}/api/series/filters`)
+        const data = await loadRequestData(this.client, `${ASURASCANS_API_DOMAIN}/api/series/filters`)
 
-        return this.parser.parseTags(data).map(x => {
-            return {
-                id: x.id,
-                title: x.title,
-                type: x.type,
-                options: x.tags
-            }
-        })
+        return this.parser.parseTags(data)
     }
 
     async getTags(): Promise<Property[]> {
-        const data = await this.loadRequestData(`${ASURASCANS_API_DOMAIN}/api/series/filters`)
-
+        const filters = await this.getFilters()
         return [
             {
                 id: "genres",
                 title: "Genres",
-                tags: this.parser.parseTags(data).find(x => x.id == "genres")?.tags!
+                tags: filters.find(x => x.id == "genres")?.options!
             }
         ]
     }
@@ -301,7 +262,7 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
 
         const request = await this.constructSearchRequest(page, query)
         const response = await this.client.request(request)
-        this.checkResponseErrors(response)
+        checkResponseErrors(response)
         const $ = load(response.data as string, { _useHtmlParser2: true })
         const results = await this.parser.parseSearchResults($, this)
 
@@ -360,7 +321,7 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
             throw new Error("Accessing invalid page")
 
         const url: string = await this.getBaseUrl()
-        const $ = await this.loadCheerioData(`${url}/`)
+        const $ = await loadCheerioData(this.client, `${url}/`)
 
         const promises: Promise<PageSection>[] = []
         const sectionValues = Object.values(this.sections).sort((n1, n2) => n1.sortIndex - n2.sortIndex)
@@ -380,39 +341,15 @@ export class Target implements ContentSource, PageLinkResolver, ImageRequestHand
         return await Promise.all(promises)
     }
 
-    async loadRequestData(url: string, method: string = 'GET'): Promise<string> {
-        const request: NetworkRequest = {
-            url,
-            method,
-            validateStatus: s => s == 404 || s == 403 || s == 503 || (s >= 200 && s < 300)
-        }
-
-        const response = await this.client.request(request)
-        this.checkResponseErrors(response)
-        return response.data as string
-    }
-
-    async loadCheerioData(url: string, method: string = 'GET'): Promise<CheerioStatic> {
-        return load(await this.loadRequestData(url, method), { _useHtmlParser2: true })
-    }
-
-    checkResponseErrors(response: NetworkResponse): void {
-        const status = response.status
-        switch (status) {
-            case 403:
-            case 503:
-                throw new CloudflareError(response.request.url)
-            case 404:
-                throw new Error(`The requested page ${response.request.url} was not found!`)
-        }
-    }
-
     async willRequestImage(url: string): Promise<NetworkRequest> {
+        const baseUrl = await this.getBaseUrl()
         return {
             url,
             headers: {
-                'referer': `${this.baseUrl}/`,
-                'origin': `${this.baseUrl}/`,
+                'referer': `${baseUrl}/`,
+                'Accept': 'image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5',
+                'Accept-Encoding' : 'gzip, deflate, br, zstd'
+                //'origin': `${baseUrl}/`,
             }
         }
     }
