@@ -133,7 +133,7 @@ export class AsuraScansParser{
 
             // make sure the chapter number is a number and not NaN
             chapNum = parseFloat(chapNum)
-            if (!chapNum) {
+            if (isNaN(chapNum)) {
                 throw new Error(`Could not parse a valid number for chapter ${link}`)
             }
 
