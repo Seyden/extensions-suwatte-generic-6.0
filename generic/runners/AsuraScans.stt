@@ -221,7 +221,7 @@ class AsuraScansParser {
             }
             // make sure the chapter number is a number and not NaN
             chapNum = parseFloat(chapNum);
-            if (!chapNum) {
+            if (isNaN(chapNum)) {
                 throw new Error(`Could not parse a valid number for chapter ${link}`);
             }
             const title = $('span.pl-1', anchor).first().text().trim() ?? '';
@@ -487,7 +487,7 @@ class Target {
     constructor() {
         this.info = {
             id: 'AsuraScans',
-            version: 2.1,
+            version: 2.11,
             name: 'AsuraScans',
             thumbnail: 'AsuraScans.png',
             rating: daisuke_1.CatalogRating.MIXED,
