@@ -125,7 +125,7 @@ export class AsuraScansParser{
             const anchor = $('a', chapter)
             const link = anchor.attr('href') ?? ''
 
-            const chapNumRegex = link.match(/(?:chapter|ch.*?)(\d+\.?\d?(?:[-_]\d+)?)|(\d+\.?\d?(?:[-_]\d+)?)$/)
+            const chapNumRegex = link.match(/(?:chapter|ch?)\/(\d+\.?\d?(?:[-_]\d+)?)|(\d+\.?\d?(?:[-_]\d+)?)$/)
             let chapNum: string | number | null = chapNumRegex && chapNumRegex[1] ? chapNumRegex[1].replace(/[-_]/gm, '.') : null
             if (!chapNum) {
                 throw new Error(`Could not parse out chapter number when getting chapters for: ${mangaId}`)
